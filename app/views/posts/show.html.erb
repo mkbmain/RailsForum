@@ -1,0 +1,52 @@
+<%# app/views/posts/show.html.erb %>
+<div class="max-w-3xl mx-auto mt-8 px-4">
+  <%= link_to "← Back to Forum", posts_path, class: "text-blue-600 hover:underline text-sm" %>
+
+  <div class="bg-white border border-gray-200 rounded-lg p-6 mt-4">
+    <h1 class="text-2xl font-bold"><%= @post.title %></h1>
+    <div class="flex items-center gap-2 mt-1">
+      <%= link_to @post.category.name,
+            posts_path(category: @post.category_id),
+            class: "text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 category-badge" %>
+      <p class="text-sm text-gray-500">
+        by <%= @post.user.name %> &middot; <%= time_ago_in_words(@post.created_at) %> ago
+      </p>
+    </div>
+    <div class="mt-4 text-gray-800 whitespace-pre-wrap"><%= @post.body %></div>
+  </div>
+
+  <div class="mt-8">
+    <h2 class="text-xl font-semibold mb-4">
+      Replies (<%= @post.replies.size %>)
+    </h2>
+
+    <% @post.replies.each do |reply| %>
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
+        <p class="text-gray-800 whitespace-pre-wrap"><%= reply.body %></p>
+        <p class="text-sm text-gray-500 mt-2">
+          &mdash; <%= reply.user.name %>, <%= time_ago_in_words(reply.created_at) %> ago
+        </p>
+      </div>
+    <% end %>
+
+    <% if logged_in? %>
+      <div class="mt-6 bg-white border border-gray-200 rounded-lg p-4">
+        <h3 class="font-medium mb-3">Leave a Reply</h3>
+        <%= form_with model: [@post, @reply], class: "space-y-3" do |f| %>
+          <% if @reply.errors.any? %>
+            <div class="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
+              <%= @reply.errors.full_messages.to_sentence %>
+            </div>
+          <% end %>
+          <%= f.text_area :body, rows: 4, placeholder: "Write your reply...",
+                class: "w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" %>
+          <%= f.submit "Post Reply", class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium" %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="mt-6 text-gray-600 text-sm">
+        <%= link_to "Log in", login_path, class: "text-blue-600 hover:underline" %> to reply.
+      </p>
+    <% end %>
+  </div>
+</div>
