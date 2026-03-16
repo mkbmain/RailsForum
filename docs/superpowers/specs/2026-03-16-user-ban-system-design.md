@@ -17,7 +17,7 @@ Lookup table of predefined ban reasons.
 
 | Column | Type | Constraints |
 |---|---|---|
-| id | integer | PK |
+| id | bigint | PK |
 | name | string | not null, unique |
 | created_at | datetime | not null |
 | updated_at | datetime | not null |
@@ -30,9 +30,9 @@ One row per ban issued. Multiple bans per user are allowed, providing a full aud
 
 | Column | Type | Constraints |
 |---|---|---|
-| id | integer | PK |
-| user_id | integer | not null, FK → users |
-| ban_reason_id | integer | not null, FK → ban_reasons |
+| id | bigint | PK |
+| user_id | bigint | not null, FK → users |
+| ban_reason_id | bigint | not null, FK → ban_reasons |
 | banned_from | datetime | not null, defaults to now() |
 | banned_until | datetime | not null |
 | created_at | datetime | not null |
@@ -40,7 +40,28 @@ One row per ban issued. Multiple bans per user are allowed, providing a full aud
 
 Index on `(user_id, banned_until)` for fast active-ban lookups.
 
-A ban is **active** when `banned_until >= Time.current`. Bans are not expected to have future start dates, so `banned_from` is always set to the time the ban is created.
+A ban is **active** when `banned_until >= Time.current`. Bans are not expected to have future start dates, so `banned_from` defaults to `now()` at the database level (migration: `default: -> { "now()" }`). Application code does not need to set it explicitly when inserting via PostgreSQL directly.
+
+### Migration sketch
+
+```ruby
+create_table :ban_reasons do |t|
+  t.string :name, null: false
+  t.timestamps
+end
+add_index :ban_reasons, :name, unique: true
+
+create_table :user_bans do |t|
+  t.references :user,       null: false, foreign_key: true
+  t.references :ban_reason, null: false, foreign_key: true
+  t.datetime :banned_from,  null: false, default: -> { "now()" }
+  t.datetime :banned_until, null: false
+  t.timestamps
+end
+add_index :user_bans, [:user_id, :banned_until]
+```
+
+Primary and foreign keys use Rails default (`bigint`) to match the rest of the schema.
 
 ---
 
@@ -52,8 +73,20 @@ A ban is **active** when `banned_until >= Time.current`. Bans are not expected t
 ### `UserBan`
 - `belongs_to :user`
 - `belongs_to :ban_reason`
+- `before_validation` callback sets `self.banned_from ||= Time.current` so the model is self-consistent before hitting the DB (the DB-level default only fires at INSERT; without this, `valid?` would fail the presence check on an unsaved record).
 - `validates :banned_from, :banned_until, presence: true`
-- Validates `banned_until > banned_from`
+- Custom validator: `banned_until` must be after `banned_from`. Nil-guards because either field may be absent:
+
+```ruby
+before_validation { self.banned_from ||= Time.current }
+
+validate :banned_until_after_banned_from
+
+def banned_until_after_banned_from
+  return unless banned_from.present? && banned_until.present?
+  errors.add(:banned_until, "must be after banned from") if banned_until <= banned_from
+end
+```
 
 ### `User`
 - Gains `has_many :user_bans`
@@ -106,7 +139,7 @@ module Bannable
   def check_not_banned
     checker = BanChecker.new(current_user)
     if checker.banned?
-      flash[:alert] = "You are banned until #{checker.banned_until.strftime("%B %d, %Y")}."
+      flash[:alert] = "You are banned until #{checker.banned_until.strftime("%B %-d, %Y")}."
       redirect_to ban_redirect_path
     end
   end
@@ -119,12 +152,15 @@ end
 
 ### `PostsController`
 - `include Bannable`
-- `before_action :check_not_banned, only: [:create]`
+- `before_action :check_not_banned, only: [:create]` — scoped to `:create` only (mirrors `check_rate_limit`); banned users can still reach the new-post form but are blocked on submit
+- `before_action` order for `:create`: `require_login` → `check_not_banned` → `check_rate_limit`
 - Overrides `ban_redirect_path` to return `new_post_path`
 
 ### `RepliesController`
 - `include Bannable`
-- `before_action :check_not_banned, only: [:create]`
+- `before_action :check_not_banned, only: [:create]` — scoped to `:create` only (mirrors `check_rate_limit`)
+- `before_action` order for `:create`: `require_login` → `check_not_banned` → `check_rate_limit`
+- Overrides `ban_redirect_path` to return `post_path(params[:post_id])` (mirrors the existing `rate_limit_redirect_path` override)
 
 ---
 
