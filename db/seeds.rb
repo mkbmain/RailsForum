@@ -8,3 +8,12 @@ puts "Seeded #{Provider.count} providers"
   BanReason.find_or_create_by!(name: name)
 end
 puts "Seeded #{BanReason.count} ban reasons"
+
+[
+  [2, "Tech"],
+  [3, "Life Style"],
+  [4, "Off Topic"]
+].each do |id, name|
+  Category.find_or_create_by!(id: id) { |c| c.name = name }
+end
+puts "Seeded #{Category.count} categories"
