@@ -97,4 +97,48 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to post_path(@post)
   end
+
+  # ---- ban enforcement ----
+
+  test "POST /posts/:post_id/replies is blocked when user is banned" do
+    ban_reason = BanReason.find_or_create_by!(name: "Spam")
+    UserBan.create!(user: @user, ban_reason: ban_reason, banned_until: 1.day.from_now)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+
+    assert_no_difference "Reply.count" do
+      post post_replies_path(@post), params: { reply: { body: "blocked reply" } }
+    end
+    assert_redirected_to post_path(@post)
+    assert_match /banned until/, flash[:alert]
+  end
+
+  test "POST /posts/:post_id/replies ban redirects back to the post, not root" do
+    ban_reason = BanReason.find_or_create_by!(name: "Spam")
+    UserBan.create!(user: @user, ban_reason: ban_reason, banned_until: 1.day.from_now)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    post post_replies_path(@post), params: { reply: { body: "blocked" } }
+    assert_redirected_to post_path(@post)
+  end
+
+  test "POST /posts/:post_id/replies is allowed when ban is expired" do
+    ban_reason = BanReason.find_or_create_by!(name: "Spam")
+    UserBan.create!(user: @user, ban_reason: ban_reason, banned_from: 2.days.ago, banned_until: 1.second.ago)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+
+    assert_difference "Reply.count", 1 do
+      post post_replies_path(@post), params: { reply: { body: "allowed reply" } }
+    end
+  end
+
+  test "DELETE /posts/:post_id/replies/:id is unaffected by ban" do
+    ban_reason = BanReason.find_or_create_by!(name: "Spam")
+    UserBan.create!(user: @user, ban_reason: ban_reason, banned_until: 1.day.from_now)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    reply = Reply.create!(post: @post, user: @user, body: "My reply")
+
+    assert_difference "Reply.count", -1 do
+      delete post_reply_path(@post, reply)
+    end
+    assert_redirected_to post_path(@post)
+  end
 end
