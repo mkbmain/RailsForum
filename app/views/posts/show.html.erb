@@ -8,9 +8,18 @@
       <%= link_to @post.category.name,
             posts_path(category: @post.category_id),
             class: "text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 category-badge" %>
-      <p class="text-sm text-gray-500">
-        by <%= @post.user.name %> &middot; <%= time_ago_in_words(@post.created_at) %> ago
-      </p>
+      <div class="flex items-center gap-1.5">
+        <% if @post.user.avatar_url.present? %>
+          <%= image_tag @post.user.avatar_url, class: "w-5 h-5 rounded-full", alt: "" %>
+        <% else %>
+          <span class="w-5 h-5 rounded-full bg-teal-100 text-teal-700 font-semibold flex items-center justify-center text-xs">
+            <%= (@post.user.name.presence || "?").first.upcase %>
+          </span>
+        <% end %>
+        <p class="text-sm text-gray-500">
+          <%= @post.user.name %> &middot; <%= time_ago_in_words(@post.created_at) %> ago
+        </p>
+      </div>
     </div>
     <div class="mt-4 text-gray-800 whitespace-pre-wrap"><%= @post.body %></div>
   </div>
@@ -22,10 +31,18 @@
 
     <% @post.replies.each do |reply| %>
       <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
+        <div class="flex items-center gap-2 mb-2">
+          <% if reply.user.avatar_url.present? %>
+            <%= image_tag reply.user.avatar_url, class: "w-6 h-6 rounded-full", alt: "" %>
+          <% else %>
+            <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-700 font-semibold flex items-center justify-center text-xs">
+              <%= (reply.user.name.presence || "?").first.upcase %>
+            </span>
+          <% end %>
+          <span class="text-sm font-medium text-gray-700"><%= reply.user.name %></span>
+          <span class="text-xs text-gray-400"><%= time_ago_in_words(reply.created_at) %> ago</span>
+        </div>
         <p class="text-gray-800 whitespace-pre-wrap"><%= reply.body %></p>
-        <p class="text-sm text-gray-500 mt-2">
-          &mdash; <%= reply.user.name %>, <%= time_ago_in_words(reply.created_at) %> ago
-        </p>
       </div>
     <% end %>
 
