@@ -354,7 +354,7 @@ class BanCheckerTest < ActiveSupport::TestCase
   end
 
   test "banned? is false when all bans are expired" do
-    UserBan.create!(user: @user, ban_reason: @reason, banned_until: 1.second.ago)
+    UserBan.create!(user: @user, ban_reason: @reason, banned_from: 2.days.ago, banned_until: 1.day.ago)
     assert_not BanChecker.new(@user).banned?
   end
 
@@ -511,7 +511,7 @@ end
 
 test "POST /posts is allowed when ban is expired" do
   ban_reason = BanReason.find_or_create_by!(name: "Spam")
-  UserBan.create!(user: @user, ban_reason: ban_reason, banned_until: 1.second.ago)
+  UserBan.create!(user: @user, ban_reason: ban_reason, banned_from: 2.days.ago, banned_until: 1.second.ago)
   post login_path, params: { email: "u@example.com", password: "pass123" }
 
   assert_difference "Post.count", 1 do
@@ -619,7 +619,7 @@ end
 
 test "POST /posts/:post_id/replies is allowed when ban is expired" do
   ban_reason = BanReason.find_or_create_by!(name: "Spam")
-  UserBan.create!(user: @user, ban_reason: ban_reason, banned_until: 1.second.ago)
+  UserBan.create!(user: @user, ban_reason: ban_reason, banned_from: 2.days.ago, banned_until: 1.second.ago)
   post login_path, params: { email: "u@example.com", password: "pass123" }
 
   assert_difference "Reply.count", 1 do
