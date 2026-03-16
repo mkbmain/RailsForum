@@ -26,6 +26,37 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
+-- Name: ban_reasons; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ban_reasons (
+    id bigint NOT NULL,
+    name character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: ban_reasons_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ban_reasons_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ban_reasons_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ban_reasons_id_seq OWNED BY public.ban_reasons.id;
+
+
+--
 -- Name: categories; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -125,6 +156,40 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: user_bans; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_bans (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    ban_reason_id bigint NOT NULL,
+    banned_from timestamp(6) without time zone DEFAULT now() NOT NULL,
+    banned_until timestamp(6) without time zone NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: user_bans_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_bans_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_bans_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_bans_id_seq OWNED BY public.user_bans.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -161,6 +226,13 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
+-- Name: ban_reasons id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ban_reasons ALTER COLUMN id SET DEFAULT nextval('public.ban_reasons_id_seq'::regclass);
+
+
+--
 -- Name: posts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -172,6 +244,13 @@ ALTER TABLE ONLY public.posts ALTER COLUMN id SET DEFAULT nextval('public.posts_
 --
 
 ALTER TABLE ONLY public.replies ALTER COLUMN id SET DEFAULT nextval('public.replies_id_seq'::regclass);
+
+
+--
+-- Name: user_bans id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_bans ALTER COLUMN id SET DEFAULT nextval('public.user_bans_id_seq'::regclass);
 
 
 --
@@ -187,6 +266,14 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 
 ALTER TABLE ONLY public.ar_internal_metadata
     ADD CONSTRAINT ar_internal_metadata_pkey PRIMARY KEY (key);
+
+
+--
+-- Name: ban_reasons ban_reasons_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ban_reasons
+    ADD CONSTRAINT ban_reasons_pkey PRIMARY KEY (id);
 
 
 --
@@ -238,11 +325,26 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
+-- Name: user_bans user_bans_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_bans
+    ADD CONSTRAINT user_bans_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: index_ban_reasons_on_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_ban_reasons_on_name ON public.ban_reasons USING btree (name);
 
 
 --
@@ -271,6 +373,27 @@ CREATE INDEX index_replies_on_post_id ON public.replies USING btree (post_id);
 --
 
 CREATE INDEX index_replies_on_user_id ON public.replies USING btree (user_id);
+
+
+--
+-- Name: index_user_bans_on_ban_reason_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_user_bans_on_ban_reason_id ON public.user_bans USING btree (ban_reason_id);
+
+
+--
+-- Name: index_user_bans_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_user_bans_on_user_id ON public.user_bans USING btree (user_id);
+
+
+--
+-- Name: index_user_bans_on_user_id_and_banned_until; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_user_bans_on_user_id_and_banned_until ON public.user_bans USING btree (user_id, banned_until);
 
 
 --
@@ -328,12 +451,30 @@ ALTER TABLE ONLY public.posts
 
 
 --
+-- Name: user_bans fk_rails_b27db52384; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_bans
+    ADD CONSTRAINT fk_rails_b27db52384 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: user_bans fk_rails_c15024a086; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_bans
+    ADD CONSTRAINT fk_rails_c15024a086 FOREIGN KEY (ban_reason_id) REFERENCES public.ban_reasons(id);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260316134716'),
+('20260316134715'),
 ('20260315200000'),
 ('20260315175233'),
 ('20260315175008'),
