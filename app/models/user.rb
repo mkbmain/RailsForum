@@ -2,6 +2,7 @@ class User < ApplicationRecord
   belongs_to :provider
   has_many :posts, dependent: :destroy
   has_many :replies, dependent: :destroy
+  has_many :user_bans
 
   has_secure_password validations: false
 

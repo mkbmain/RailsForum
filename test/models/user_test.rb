@@ -75,4 +75,13 @@ class UserTest < ActiveSupport::TestCase
     assert user.valid?
     assert user.authenticate("secret123"), "original password should still authenticate"
   end
+
+  test "has many user_bans" do
+    Provider.find_or_create_by!(id: 3, name: "internal")
+    user   = User.create!(email: "u@example.com", name: "U", password: "pass123",
+                          password_confirmation: "pass123", provider_id: 3)
+    reason = BanReason.create!(name: "Spam")
+    ban    = UserBan.create!(user: user, ban_reason: reason, banned_until: 1.day.from_now)
+    assert_includes user.user_bans, ban
+  end
 end
