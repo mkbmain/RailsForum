@@ -1,7 +1,9 @@
 class PostsController < ApplicationController
   include RateLimitable
+  include Bannable
 
   before_action :require_login, only: [:new, :create]
+  before_action :check_not_banned, only: [:create]
   before_action :check_rate_limit, only: [:create]
 
   def index
@@ -46,6 +48,10 @@ class PostsController < ApplicationController
   end
 
   def rate_limit_redirect_path
+    new_post_path
+  end
+
+  def ban_redirect_path
     new_post_path
   end
 end

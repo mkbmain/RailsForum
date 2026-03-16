@@ -285,4 +285,45 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".reply-count", text: /last reply/, count: 0
   end
+
+  # ---- ban enforcement ----
+
+  test "POST /posts is blocked when user is banned" do
+    ban_reason = BanReason.find_or_create_by!(name: "Spam")
+    UserBan.create!(user: @user, ban_reason: ban_reason, banned_until: 1.day.from_now)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+
+    assert_no_difference "Post.count" do
+      post posts_path, params: { post: { title: "Sneaky", body: "blocked" } }
+    end
+    assert_redirected_to new_post_path
+    assert_match /banned until/, flash[:alert]
+  end
+
+  test "POST /posts ban flash includes the expiry date" do
+    ban_reason = BanReason.find_or_create_by!(name: "Spam")
+    expiry = 5.days.from_now
+    UserBan.create!(user: @user, ban_reason: ban_reason, banned_until: expiry)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    post posts_path, params: { post: { title: "X", body: "Y" } }
+    assert_match expiry.strftime("%B %-d, %Y"), flash[:alert]
+  end
+
+  test "POST /posts is allowed when ban is expired" do
+    ban_reason = BanReason.find_or_create_by!(name: "Spam")
+    UserBan.create!(user: @user, ban_reason: ban_reason, banned_from: 2.days.ago, banned_until: 1.second.ago)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+
+    assert_difference "Post.count", 1 do
+      post posts_path, params: { post: { title: "Allowed", body: "some content" } }
+    end
+  end
+
+  test "GET /posts/new is accessible when user is banned" do
+    ban_reason = BanReason.find_or_create_by!(name: "Spam")
+    UserBan.create!(user: @user, ban_reason: ban_reason, banned_until: 1.day.from_now)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get new_post_path
+    assert_response :success
+  end
 end
