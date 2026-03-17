@@ -81,7 +81,69 @@ class UserTest < ActiveSupport::TestCase
     user   = User.create!(email: "u@example.com", name: "U", password: "pass123",
                           password_confirmation: "pass123", provider_id: 3)
     reason = BanReason.create!(name: "Spam")
-    ban    = UserBan.create!(user: user, ban_reason: reason, banned_until: 1.day.from_now)
+    ban    = UserBan.create!(user: user, ban_reason: reason, banned_until: 1.day.from_now,
+                             banned_by: user)
     assert_includes user.user_bans, ban
+  end
+
+  test "new user is automatically assigned the creator role" do
+    user = User.create!(email: "newrole@example.com", name: "New",
+                        password: "pass123", password_confirmation: "pass123",
+                        provider_id: 3)
+    assert user.creator?
+  end
+
+  test "creator? returns false when user has no creator role" do
+    user = User.create!(email: "norole@example.com", name: "No Role",
+                        password: "pass123", password_confirmation: "pass123",
+                        provider_id: 3)
+    user.user_roles.destroy_all
+    assert_not user.creator?
+  end
+
+  test "sub_admin? returns true when user has sub_admin role" do
+    user = User.create!(email: "sa@example.com", name: "SA",
+                        password: "pass123", password_confirmation: "pass123",
+                        provider_id: 3)
+    user.roles << Role.find_by!(name: Role::SUB_ADMIN)
+    assert user.sub_admin?
+  end
+
+  test "admin? returns true when user has admin role" do
+    user = User.create!(email: "adm@example.com", name: "Admin",
+                        password: "pass123", password_confirmation: "pass123",
+                        provider_id: 3)
+    user.roles << Role.find_by!(name: Role::ADMIN)
+    assert user.admin?
+  end
+
+  test "moderator? is true for sub_admin" do
+    user = User.create!(email: "mod@example.com", name: "Mod",
+                        password: "pass123", password_confirmation: "pass123",
+                        provider_id: 3)
+    user.roles << Role.find_by!(name: Role::SUB_ADMIN)
+    assert user.moderator?
+  end
+
+  test "moderator? is true for admin" do
+    user = User.create!(email: "adm2@example.com", name: "Admin2",
+                        password: "pass123", password_confirmation: "pass123",
+                        provider_id: 3)
+    user.roles << Role.find_by!(name: Role::ADMIN)
+    assert user.moderator?
+  end
+
+  test "moderator? is false for creator-only user" do
+    user = User.create!(email: "creator@example.com", name: "Creator",
+                        password: "pass123", password_confirmation: "pass123",
+                        provider_id: 3)
+    assert_not user.moderator?
+  end
+
+  test "has_role? returns false for role user does not have" do
+    user = User.create!(email: "norole2@example.com", name: "No SA",
+                        password: "pass123", password_confirmation: "pass123",
+                        provider_id: 3)
+    assert_not user.has_role?(Role::SUB_ADMIN)
   end
 end

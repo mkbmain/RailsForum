@@ -1,6 +1,7 @@
 class UserBan < ApplicationRecord
   belongs_to :user
   belongs_to :ban_reason
+  belongs_to :banned_by, class_name: "User", optional: true
 
   before_validation { self.banned_from ||= Time.current }
 

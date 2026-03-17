@@ -3,6 +3,10 @@ class User < ApplicationRecord
   has_many :posts, dependent: :destroy
   has_many :replies, dependent: :destroy
   has_many :user_bans
+  has_many :user_roles
+  has_many :roles, through: :user_roles
+
+  after_create :assign_creator_role
 
   has_secure_password validations: false
 
@@ -29,7 +33,20 @@ class User < ApplicationRecord
     provider_id == Provider::INTERNAL
   end
 
+  def has_role?(name)
+    roles.exists?(name: name)
+  end
+
+  def creator?   = has_role?(Role::CREATOR)
+  def sub_admin? = has_role?(Role::SUB_ADMIN)
+  def admin?     = has_role?(Role::ADMIN)
+  def moderator? = sub_admin? || admin?
+
   private
+
+  def assign_creator_role
+    roles << Role.find_by!(name: Role::CREATOR)
+  end
 
   def password_matches_confirmation
     errors.add(:password_confirmation, "doesn't match Password") unless password == password_confirmation
