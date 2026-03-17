@@ -12,7 +12,7 @@ class CreateUsers < ActiveRecord::Migration[8.0]
     end
 
     add_index :users, :email, unique: true
-    add_index :users, [:provider_id, :uid], unique: true, where: "uid IS NOT NULL"
+    add_index :users, [ :provider_id, :uid ], unique: true, where: "uid IS NOT NULL"
     add_foreign_key :users, :providers
   end
 end

@@ -81,6 +81,7 @@ CREATE TABLE public.posts (
     last_replied_at timestamp(6) without time zone,
     removed_at timestamp(6) without time zone,
     removed_by_id bigint,
+    last_edited_at timestamp(6) without time zone DEFAULT now() NOT NULL,
     CONSTRAINT posts_body_max_length CHECK ((char_length(body) <= 1000))
 );
 
@@ -127,6 +128,7 @@ CREATE TABLE public.replies (
     updated_at timestamp(6) without time zone NOT NULL,
     removed_at timestamp(6) without time zone,
     removed_by_id bigint,
+    last_edited_at timestamp(6) without time zone DEFAULT now() NOT NULL,
     CONSTRAINT replies_body_max_length CHECK ((char_length(body) <= 1000))
 );
 
@@ -599,6 +601,8 @@ ALTER TABLE ONLY public.user_bans
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260317114403'),
+('20260317114348'),
 ('20260317102012'),
 ('20260317101956'),
 ('20260316134716'),

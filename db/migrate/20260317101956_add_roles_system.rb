@@ -11,7 +11,7 @@ class AddRolesSystem < ActiveRecord::Migration[8.1]
       t.column  :role_id, :smallint, null: false
       t.datetime :created_at, null: false, default: -> { "now()" }
     end
-    add_index :user_roles, [:user_id, :role_id], unique: true
+    add_index :user_roles, [ :user_id, :role_id ], unique: true
     add_foreign_key :user_roles, :users, column: :user_id
     add_foreign_key :user_roles, :roles, column: :role_id
 

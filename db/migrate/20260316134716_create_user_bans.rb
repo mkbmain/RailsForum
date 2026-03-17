@@ -7,6 +7,6 @@ class CreateUserBans < ActiveRecord::Migration[8.1]
       t.datetime :banned_until, null: false
       t.timestamps
     end
-    add_index :user_bans, [:user_id, :banned_until]
+    add_index :user_bans, [ :user_id, :banned_until ]
   end
 end
