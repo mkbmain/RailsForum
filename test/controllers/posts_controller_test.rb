@@ -380,6 +380,14 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_match /Not authorized/, flash[:alert]
   end
 
+  test "DELETE /posts/:id is forbidden when moderator targets their own post" do
+    own_post = Post.create!(user: @sub_admin, title: "Own post", body: "body")
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    delete post_path(own_post)
+    assert_not own_post.reload.removed?
+    assert_match /Not authorized/, flash[:alert]
+  end
+
   test "GET /posts index excludes removed posts" do
     @post.update_column(:removed_at, Time.current)
     get posts_path
