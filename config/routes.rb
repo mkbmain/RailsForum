@@ -13,12 +13,20 @@ Rails.application.routes.draw do
   get "/auth/failure",            to: "omniauth_callbacks#failure"
 
   # Forum
+  get "/search", to: "search#index"
+
   resources :posts do
-    resources :replies, only: [ :create, :destroy, :edit, :update ]
+    resources :reactions, only: [ :create, :destroy ]
+    resources :replies,   only: [ :create, :destroy, :edit, :update ]
   end
 
-  resources :users, only: [] do
+  resources :users, only: [ :show, :edit, :update ] do
     resources :bans, only: [ :new, :create ]
+  end
+
+  resources :notifications, only: [ :index ] do
+    collection { patch :read_all }
+    member     { patch :read }
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
