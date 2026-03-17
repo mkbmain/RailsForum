@@ -67,4 +67,11 @@ class ReactionsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to login_path
   end
+
+  test "POST on hidden post returns 404" do
+    @post.update_column(:removed_at, Time.current)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    post post_reactions_path(@post), params: { emoji: "👍" }
+    assert_response :not_found
+  end
 end

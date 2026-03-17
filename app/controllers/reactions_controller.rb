@@ -34,6 +34,6 @@ class ReactionsController < ApplicationController
   private
 
   def set_post
-    @post = Post.find(params[:post_id])
+    @post = Post.visible.find(params[:post_id])
   end
 end
