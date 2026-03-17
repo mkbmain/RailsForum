@@ -5,6 +5,7 @@ class UserBan < ApplicationRecord
 
   before_validation { self.banned_from ||= Time.current }
 
+  validates :banned_by, presence: true, on: :create
   validates :banned_from, :banned_until, presence: true
   validate :banned_until_after_banned_from
 
