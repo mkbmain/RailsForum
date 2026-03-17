@@ -16,7 +16,7 @@ class SearchController < ApplicationController
 
       posts = posts.order(Arel.sql("COALESCE(last_replied_at, created_at) DESC"))
       @total = posts.count
-      @posts = posts.limit(@take + 1).offset((@page - 1) * @take)
+      @posts = posts.limit(@take + 1).offset((@page - 1) * @take) # +1 probes for a next page; view renders only first(@take)
     else
       @posts = []
       @total = 0
