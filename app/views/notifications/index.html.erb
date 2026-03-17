@@ -1,0 +1,53 @@
+<%# app/views/notifications/index.html.erb %>
+<div class="max-w-2xl mx-auto mt-8 px-4 pb-12">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-stone-900">Notifications</h1>
+    <% if @unread_count > 0 %>
+      <%= button_to "Mark all read", read_all_notifications_path, method: :patch,
+            class: "text-sm text-teal-700 hover:underline bg-transparent border-0 p-0 cursor-pointer font-medium" %>
+    <% end %>
+  </div>
+
+  <% if @notifications.empty? %>
+    <div class="bg-white border border-stone-200 rounded-xl p-8 text-center">
+      <p class="text-stone-400 text-sm">No notifications yet.</p>
+    </div>
+  <% else %>
+    <div class="space-y-2">
+      <% @notifications.each do |n| %>
+        <% post_link = n.notifiable.is_a?(Post) ? post_path(n.notifiable) : post_path(n.notifiable.post) %>
+        <div class="bg-white border border-stone-200 rounded-xl p-4 flex items-start gap-3 <%= n.read? ? '' : 'bg-teal-50 border-teal-200' %>">
+          <%# Actor avatar %>
+          <% if n.actor.avatar_url.present? %>
+            <%= image_tag n.actor.avatar_url, class: "w-8 h-8 rounded-full shrink-0 mt-0.5", alt: "" %>
+          <% else %>
+            <span class="w-8 h-8 rounded-full bg-teal-100 text-teal-700 font-semibold flex items-center justify-center text-sm shrink-0 mt-0.5">
+              <%= (n.actor.name.presence || "?").first.upcase %>
+            </span>
+          <% end %>
+
+          <div class="flex-1 min-w-0">
+            <p class="text-sm text-stone-700">
+              <%= link_to n.actor.name, user_path(n.actor), class: "font-semibold hover:underline" %>
+              <%= case n.event_type
+                  when "reply_to_post"   then "replied to your post"
+                  when "reply_in_thread" then "replied in a thread you participated in"
+                  when "mention"         then "mentioned you"
+                  when "moderation"      then "removed your content"
+                  end %>
+              &mdash;
+              <%= link_to "view", post_link, class: "text-blue-500 hover:underline" %>
+            </p>
+            <p class="text-xs text-stone-400 mt-0.5"><%= time_ago_in_words(n.created_at) %> ago</p>
+          </div>
+
+          <% unless n.read? %>
+            <%= button_to "✓", read_notification_path(n), method: :patch,
+                  class: "text-xs text-teal-600 hover:text-teal-800 bg-transparent border-0 p-0 cursor-pointer shrink-0",
+                  title: "Mark as read" %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
