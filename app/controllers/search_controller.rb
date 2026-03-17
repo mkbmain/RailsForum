@@ -6,9 +6,10 @@ class SearchController < ApplicationController
     @page       = [ (params[:page] || 1).to_i, 1 ].max
 
     if @query.present?
+      safe_q = ActiveRecord::Base.sanitize_sql_like(@query)
       posts = Post.visible
                   .includes(:user, :category)
-                  .where("title ILIKE :q OR body ILIKE :q", q: "%#{@query}%")
+                  .where("title ILIKE :q OR body ILIKE :q", q: "%#{safe_q}%")
 
       category_id = params[:category].to_i
       posts = posts.where(category_id: category_id) if category_id > 0

@@ -46,7 +46,7 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "GET /search filters by category" do
-    cat2 = Category.create!(id: 2, name: "Meta")
+    cat2 = Category.create!(id: (Category.maximum(:id) || 0) + 1, name: "Meta")
     other = Post.create!(user: @user, title: "Rails and Meta", body: "body", category_id: cat2.id)
     get search_path, params: { q: "Rails", category: cat2.id }
     assert_response :success
