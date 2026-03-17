@@ -393,4 +393,33 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     get posts_path
     assert_select ".post-card", count: 0
   end
+
+  # ---- tombstone view ----
+
+  test "GET /posts/:id shows tombstone body for removed post" do
+    @post.update_column(:removed_at, Time.current)
+    @post.update_column(:removed_by_id, @sub_admin.id)
+    get post_path(@post)
+    assert_response :success
+    assert_select "div", text: /\[removed by moderator\]/
+    assert_select "div", text: /First post body/, count: 0
+  end
+
+  test "GET /posts/:id shows audit info to moderator on removed post" do
+    @post.update_column(:removed_at, Time.current)
+    @post.update_column(:removed_by_id, @sub_admin.id)
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    get post_path(@post)
+    assert_response :success
+    assert_select "p", text: /Removed by Sub/
+  end
+
+  test "GET /posts/:id does not show audit info to non-moderator on removed post" do
+    @post.update_column(:removed_at, Time.current)
+    @post.update_column(:removed_by_id, @sub_admin.id)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get post_path(@post)
+    assert_response :success
+    assert_select "p", text: /Removed by/, count: 0
+  end
 end

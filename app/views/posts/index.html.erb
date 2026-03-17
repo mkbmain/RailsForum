@@ -49,7 +49,11 @@
 
               <%# Body preview %>
               <p class="text-sm text-stone-500 line-clamp-2 mt-1">
-                <%= truncate(strip_tags(post.body), length: 200) %>
+                <% if post.removed? %>
+                  <span class="italic">[removed by moderator]</span>
+                <% else %>
+                  <%= truncate(strip_tags(post.body), length: 200) %>
+                <% end %>
               </p>
 
               <%# Bottom row: author + reply count %>
@@ -65,7 +69,7 @@
                   <span class="text-sm font-medium text-stone-700"><%= post.user.name %></span>
                 </div>
                 <span class="reply-count text-sm text-stone-400 flex items-center gap-1">
-                  &#128172; <%= post.replies.size %>
+                  &#128172; <%= post.replies.count { |r| !r.removed? } %>
                   <% if post.last_replied_at %>
                     &middot; last reply <%= time_ago_in_words(post.last_replied_at) %> ago
                   <% end %>

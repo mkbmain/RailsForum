@@ -21,7 +21,25 @@
         </p>
       </div>
     </div>
-    <div class="mt-4 text-gray-800 whitespace-pre-wrap"><%= @post.body %></div>
+    <% if logged_in? && can_moderate?(@post.user) && !@post.removed? %>
+      <div class="mt-3 flex gap-3">
+        <%= button_to "Remove Post", post_path(@post), method: :delete,
+              class: "text-xs text-red-600 hover:underline bg-transparent border-0 p-0 cursor-pointer",
+              data: { confirm: "Remove this post?" } %>
+        <%= link_to "Ban User", new_user_ban_path(user_id: @post.user_id),
+              class: "text-xs text-orange-600 hover:underline" %>
+      </div>
+    <% end %>
+    <% if @post.removed? %>
+      <div class="mt-4 text-gray-400 italic">[removed by moderator]</div>
+      <% if logged_in? && current_user.moderator? %>
+        <p class="text-xs text-gray-400 mt-1">
+          Removed by <%= @post.removed_by.name %> on <%= @post.removed_at.strftime("%B %-d, %Y") %>
+        </p>
+      <% end %>
+    <% else %>
+      <div class="mt-4 text-gray-800 whitespace-pre-wrap"><%= @post.body %></div>
+    <% end %>
   </div>
 
   <div class="mt-8">
@@ -42,7 +60,32 @@
           <span class="text-sm font-medium text-gray-700"><%= reply.user.name %></span>
           <span class="text-xs text-gray-400"><%= time_ago_in_words(reply.created_at) %> ago</span>
         </div>
-        <p class="text-gray-800 whitespace-pre-wrap"><%= reply.body %></p>
+        <% if reply.removed? %>
+          <p class="text-gray-400 italic">[removed by moderator]</p>
+          <% if logged_in? && current_user.moderator? %>
+            <p class="text-xs text-gray-400 mt-1">
+              Removed by <%= reply.removed_by.name %> on <%= reply.removed_at.strftime("%B %-d, %Y") %>
+            </p>
+          <% end %>
+        <% else %>
+          <p class="text-gray-800 whitespace-pre-wrap"><%= reply.body %></p>
+        <% end %>
+        <div class="flex items-center justify-between mt-2">
+          <span></span>
+          <div class="flex gap-3">
+            <% if logged_in? && reply.user == current_user && !reply.removed? %>
+              <%= button_to "Delete", post_reply_path(@post, reply), method: :delete,
+                    class: "text-xs text-gray-400 hover:text-red-500 bg-transparent border-0 p-0 cursor-pointer" %>
+            <% end %>
+            <% if logged_in? && can_moderate?(reply.user) && !reply.removed? %>
+              <%= button_to "Remove", post_reply_path(@post, reply), method: :delete,
+                    class: "text-xs text-red-600 hover:underline bg-transparent border-0 p-0 cursor-pointer",
+                    data: { confirm: "Remove this reply?" } %>
+              <%= link_to "Ban User", new_user_ban_path(user_id: reply.user_id),
+                    class: "text-xs text-orange-600 hover:underline" %>
+            <% end %>
+          </div>
+        </div>
       </div>
     <% end %>
 
