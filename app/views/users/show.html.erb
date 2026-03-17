@@ -44,14 +44,14 @@
       <div class="space-y-3">
         <% @activity.each do |item| %>
           <% if item[:type] == :post %>
-            <% p = item[:record] %>
+            <% post_record = item[:record] %>
             <div class="bg-white border border-stone-200 rounded-xl p-4">
               <div class="flex items-center gap-2 mb-1">
                 <span class="text-xs px-2 py-0.5 bg-teal-100 text-teal-700 rounded-full font-medium">Post</span>
-                <span class="text-xs text-stone-400"><%= time_ago_in_words(p.created_at) %> ago</span>
+                <span class="text-xs text-stone-400"><%= time_ago_in_words(post_record.created_at) %> ago</span>
               </div>
               <h3 class="font-semibold">
-                <%= link_to p.title, post_path(p), class: "text-stone-900 hover:text-teal-700" %>
+                <%= link_to post_record.title, post_path(post_record), class: "text-stone-900 hover:text-teal-700" %>
               </h3>
             </div>
           <% else %>

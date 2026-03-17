@@ -30,7 +30,6 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "GET /users/:id shows public profile" do
-    Provider.find_or_create_by!(id: 3, name: "internal")
     user = User.create!(email: "profile@example.com", name: "Profile User",
                         password: "pass123", password_confirmation: "pass123",
                         provider_id: 3)
@@ -40,7 +39,6 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "GET /users/:id shows profile without login" do
-    Provider.find_or_create_by!(id: 3, name: "internal")
     user = User.create!(email: "pub@example.com", name: "Public User",
                         password: "pass123", password_confirmation: "pass123",
                         provider_id: 3)
