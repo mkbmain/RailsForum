@@ -16,7 +16,7 @@ class CreateNotifications < ActiveRecord::Migration[8.1]
 
     # Index for 24-hour reply_in_thread deduplication query
     add_index :notifications,
-              [:user_id, :notifiable_id, :notifiable_type, :event_type, :created_at],
+              [ :user_id, :notifiable_id, :notifiable_type, :event_type, :created_at ],
               name: "index_notifications_on_dedup_fields"
   end
 end
