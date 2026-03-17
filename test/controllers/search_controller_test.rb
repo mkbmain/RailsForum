@@ -53,4 +53,27 @@ class SearchControllerTest < ActionDispatch::IntegrationTest
     assert_select "a", text: /Rails and Meta/
     assert_select "a", text: /Ruby on Rails tips/, count: 0
   end
+
+  test "Next link is not shown when exactly @take results exist" do
+    # Default take is 10. The setup creates 1 post. Create 9 more to reach exactly 10.
+    9.times { |i| Post.create!(user: @user, title: "Rails post #{i}", body: "body") }
+    get search_path, params: { q: "Rails", take: 10 }
+    assert_response :success
+    assert_select "a", text: /Next/, count: 0
+  end
+
+  test "Next link is shown when more than @take results exist" do
+    10.times { |i| Post.create!(user: @user, title: "Rails post #{i}", body: "body") }
+    get search_path, params: { q: "Rails", take: 10 }
+    assert_response :success
+    assert_select "a", text: /Next/
+  end
+
+  test "only @take items are rendered even when probe record is loaded" do
+    10.times { |i| Post.create!(user: @user, title: "Rails post #{i}", body: "body") }
+    get search_path, params: { q: "Rails", take: 10 }
+    assert_response :success
+    # 10 posts should be rendered, not 11
+    assert_select "h2 a", count: 10
+  end
 end
