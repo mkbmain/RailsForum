@@ -1,0 +1,78 @@
+<%# app/views/search/index.html.erb %>
+<div class="max-w-7xl mx-auto mt-8 px-4 pb-12">
+  <div class="flex gap-8">
+
+    <%# Sidebar %>
+    <aside class="hidden lg:block w-64 shrink-0">
+      <div class="sticky top-4">
+        <p class="text-xs font-semibold uppercase tracking-wide text-stone-400 mb-3">Filter by Category</p>
+        <nav class="flex flex-col gap-1">
+          <%= link_to "All Categories", search_path(q: @query, take: @take),
+                class: "px-3 py-2 rounded-lg text-sm block #{params[:category].blank? ? 'bg-teal-50 text-teal-700 font-semibold' : 'text-stone-600 hover:bg-stone-100'}" %>
+          <% @categories.each do |cat| %>
+            <%= link_to cat.name, search_path(q: @query, category: cat.id, take: @take),
+                  class: "px-3 py-2 rounded-lg text-sm block #{params[:category].to_i == cat.id ? 'bg-teal-50 text-teal-700 font-semibold' : 'text-stone-600 hover:bg-stone-100'}" %>
+          <% end %>
+        </nav>
+      </div>
+    </aside>
+
+    <%# Results %>
+    <div class="flex-1 min-w-0">
+
+      <% if @query.present? %>
+        <p class="text-sm text-stone-500 mb-4">
+          <% if @total > 0 %>
+            <%= @total %> result<%= @total == 1 ? "" : "s" %> for <strong>"<%= @query %>"</strong>
+          <% end %>
+        </p>
+      <% end %>
+
+      <% if @posts.empty? %>
+        <div class="bg-white border border-stone-200 rounded-xl p-8 text-center">
+          <% if @query.present? %>
+            <p class="text-stone-400 text-sm">No posts found for "<%= @query %>".</p>
+          <% else %>
+            <p class="text-stone-400 text-sm">Enter a search term above to find posts.</p>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="space-y-4">
+          <% @posts.each do |post| %>
+            <div class="bg-white border border-stone-200 rounded-xl shadow-sm p-5 hover:border-teal-300 hover:shadow-md transition-all">
+              <div class="flex items-center justify-between mb-2">
+                <%= link_to post.category.name,
+                      search_path(q: @query, category: post.category_id, take: @take),
+                      class: "bg-teal-100 text-teal-800 text-xs font-medium px-2 py-0.5 rounded-full hover:bg-teal-200" %>
+                <span class="text-xs text-stone-400"><%= time_ago_in_words(post.last_activity_at) %> ago</span>
+              </div>
+              <h2 class="text-lg font-semibold">
+                <%= link_to post.title, post_path(post), class: "text-stone-900 hover:text-teal-700" %>
+              </h2>
+              <p class="text-sm text-stone-500 line-clamp-2 mt-1">
+                <%= truncate(strip_tags(post.body), length: 200) %>
+              </p>
+              <div class="flex items-center gap-2 mt-3 pt-3 border-t border-stone-100">
+                <span class="text-sm font-medium text-stone-700"><%= post.user.name %></span>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="flex justify-between mt-6">
+          <% if @page > 1 %>
+            <%= link_to "← Previous", search_path(q: @query, category: params[:category], take: @take, page: @page - 1),
+                  class: "text-teal-700 hover:underline font-medium text-sm" %>
+          <% else %>
+            <span></span>
+          <% end %>
+          <% if @posts.size >= @take %>
+            <%= link_to "Next →", search_path(q: @query, category: params[:category], take: @take, page: @page + 1),
+                  class: "text-teal-700 hover:underline font-medium text-sm" %>
+          <% end %>
+        </div>
+      <% end %>
+
+    </div>
+  </div>
+</div>
