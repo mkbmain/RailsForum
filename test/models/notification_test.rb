@@ -53,16 +53,18 @@ class NotificationTest < ActiveSupport::TestCase
     unread = Notification.create!(user: @user, actor: @actor, notifiable: @reply, event_type: :reply_to_post)
     read   = Notification.create!(user: @user, actor: @actor, notifiable: @reply, event_type: :mention,
                                     read_at: Time.current)
-    assert_includes Notification.unread, unread
-    assert_not_includes Notification.unread, read
+    scoped = Notification.where(id: [ unread.id, read.id ])
+    assert_includes scoped.unread, unread
+    assert_not_includes scoped.unread, read
   end
 
   test "read scope returns only notifications with read_at set" do
     unread = Notification.create!(user: @user, actor: @actor, notifiable: @reply, event_type: :reply_to_post)
     read   = Notification.create!(user: @user, actor: @actor, notifiable: @reply, event_type: :mention,
                                     read_at: Time.current)
-    assert_includes Notification.read, read
-    assert_not_includes Notification.read, unread
+    scoped = Notification.where(id: [ unread.id, read.id ])
+    assert_includes scoped.read, read
+    assert_not_includes scoped.read, unread
   end
 
   test "mark_as_read! sets read_at" do
