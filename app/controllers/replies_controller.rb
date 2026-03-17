@@ -3,8 +3,8 @@ class RepliesController < ApplicationController
   include Bannable
 
   before_action :require_login
-  before_action :check_not_banned, only: [:create]
-  before_action :check_rate_limit, only: [:create]
+  before_action :check_not_banned, only: [ :create ]
+  before_action :check_rate_limit, only: [ :create ]
 
   def create
     @post = Post.find(params[:post_id])

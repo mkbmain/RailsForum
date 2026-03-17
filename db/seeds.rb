@@ -1,8 +1,8 @@
 # Roles — must run before any user seeds
 [
-  [1, "creator"],
-  [2, "sub_admin"],
-  [3, "admin"]
+  [ 1, "creator" ],
+  [ 2, "sub_admin" ],
+  [ 3, "admin" ]
 ].each do |id, name|
   Role.find_or_create_by!(id: id) { |r| r.name = name }
 end
@@ -14,15 +14,15 @@ Provider.find_or_create_by!(id: 3) { |p| p.name = "internal" }
 
 puts "Seeded #{Provider.count} providers"
 
-["Spam", "Harassment", "Against Guidelines", "Other"].each do |name|
+[ "Spam", "Harassment", "Against Guidelines", "Other" ].each do |name|
   BanReason.find_or_create_by!(name: name)
 end
 puts "Seeded #{BanReason.count} ban reasons"
 
 [
-  [2, "Tech"],
-  [3, "Life Style"],
-  [4, "Off Topic"]
+  [ 2, "Tech" ],
+  [ 3, "Life Style" ],
+  [ 4, "Off Topic" ]
 ].each do |id, name|
   Category.find_or_create_by!(id: id) { |c| c.name = name }
 end

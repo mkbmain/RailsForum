@@ -2,10 +2,10 @@ class PostsController < ApplicationController
   include RateLimitable
   include Bannable
 
-  before_action :require_login, only: [:new, :create, :destroy]
-  before_action :require_moderator, only: [:destroy]
-  before_action :check_not_banned, only: [:create]
-  before_action :check_rate_limit, only: [:create]
+  before_action :require_login, only: [ :new, :create, :destroy ]
+  before_action :require_moderator, only: [ :destroy ]
+  before_action :check_not_banned, only: [ :create ]
+  before_action :check_rate_limit, only: [ :create ]
 
   def index
     @categories = Category.all.order(:name)
@@ -15,7 +15,7 @@ class PostsController < ApplicationController
     posts = posts.where(category_id: category_id) if category_id > 0
 
     take = (params[:take] || 10).to_i.clamp(1, 100)
-    page = [(params[:page] || 1).to_i, 1].max
+    page = [ (params[:page] || 1).to_i, 1 ].max
 
     @posts = posts.limit(take).offset((page - 1) * take)
     @take  = take

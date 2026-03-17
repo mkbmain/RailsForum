@@ -12,7 +12,7 @@ class User < ApplicationRecord
 
   validates :email, presence: true, uniqueness: { case_sensitive: false }
   validates :name, presence: true
-  validates :avatar_url, format: { with: /\Ahttps:\/\//i, message: "must be an https URL" },
+  validates :avatar_url, format: { with: /\Ahttps:\/\/.*\z/i, message: "must be an https URL" },
                          allow_blank: true
   validates :password, presence: true, if: -> { internal? && new_record? }
   validates :password, length: { minimum: 6, allow_nil: true }, if: :internal?
