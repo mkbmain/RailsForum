@@ -14,11 +14,11 @@ Rails.application.routes.draw do
 
   # Forum
   resources :posts do
-    resources :replies, only: [:create, :destroy]
+    resources :replies, only: [ :create, :destroy, :edit, :update ]
   end
 
   resources :users, only: [] do
-    resources :bans, only: [:new, :create]
+    resources :bans, only: [ :new, :create ]
   end
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
