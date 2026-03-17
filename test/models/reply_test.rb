@@ -42,4 +42,26 @@ class ReplyTest < ActiveSupport::TestCase
     older.destroy
     assert_in_delta newer.created_at.to_i, @post.reload.last_replied_at.to_i, 1
   end
+
+  test "removed? returns false when removed_at is nil" do
+    reply = Reply.create!(post: @post, user: @user, body: "hello")
+    assert_not reply.removed?
+  end
+
+  test "removed? returns true when removed_at is set" do
+    reply = Reply.create!(post: @post, user: @user, body: "hello")
+    reply.update_column(:removed_at, Time.current)
+    assert reply.removed?
+  end
+
+  test "visible scope excludes removed replies" do
+    reply = Reply.create!(post: @post, user: @user, body: "hello")
+    reply.update_column(:removed_at, Time.current)
+    assert_not_includes @post.replies.visible, reply
+  end
+
+  test "visible scope includes non-removed replies" do
+    reply = Reply.create!(post: @post, user: @user, body: "hello")
+    assert_includes @post.replies.visible, reply
+  end
 end
