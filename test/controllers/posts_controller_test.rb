@@ -422,4 +422,82 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "p", text: /Removed by/, count: 0
   end
+
+  # ---- edit / update ----
+
+  test "GET /posts/:id/edit requires login" do
+    get edit_post_path(@post)
+    assert_redirected_to login_path
+  end
+
+  test "GET /posts/:id/edit renders form when owner and within window" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get edit_post_path(@post)
+    assert_response :success
+    assert_select "form[action=?]", post_path(@post)
+    assert_select "select[name=?]", "post[category_id]"
+  end
+
+  test "GET /posts/:id/edit is forbidden for non-owner" do
+    other = User.create!(email: "other@example.com", name: "Other",
+                         password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    other_post = Post.create!(user: other, title: "Theirs", body: "their body")
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get edit_post_path(other_post)
+    assert_redirected_to post_path(other_post)
+    assert_match /not authorized/i, flash[:alert]
+  end
+
+  test "GET /posts/:id/edit is blocked after edit window expires" do
+    @post.update_column(:created_at, (EDIT_WINDOW_SECONDS + 1).seconds.ago)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get edit_post_path(@post)
+    assert_redirected_to post_path(@post)
+    assert_match /no longer be edited/i, flash[:alert]
+  end
+
+  test "PATCH /posts/:id updates post and sets last_edited_at" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    original_last_edited_at = @post.last_edited_at
+    travel_to 1.minute.from_now do
+      patch post_path(@post), params: { post: { title: "Updated Title", body: "Updated body" } }
+    end
+    assert_redirected_to post_path(@post)
+    @post.reload
+    assert_equal "Updated Title", @post.title
+    assert @post.last_edited_at > original_last_edited_at
+  end
+
+  test "PATCH /posts/:id does not change last_replied_at" do
+    @post.update_column(:last_replied_at, 1.hour.ago)
+    original_last_replied_at = @post.reload.last_replied_at
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch post_path(@post), params: { post: { title: "Edited", body: "Edited body" } }
+    assert_in_delta original_last_replied_at.to_i, @post.reload.last_replied_at.to_i, 1
+  end
+
+  test "PATCH /posts/:id is forbidden for non-owner" do
+    other = User.create!(email: "other2@example.com", name: "Other2",
+                         password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    other_post = Post.create!(user: other, title: "Theirs", body: "their body")
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch post_path(other_post), params: { post: { title: "Hacked", body: "hacked" } }
+    assert_redirected_to post_path(other_post)
+    assert_match /not authorized/i, flash[:alert]
+  end
+
+  test "PATCH /posts/:id with invalid params re-renders edit with category dropdown" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch post_path(@post), params: { post: { title: "", body: "" } }
+    assert_response :unprocessable_entity
+    assert_select "select[name=?]", "post[category_id]"
+  end
+
+  test "PATCH /posts/:id is blocked after edit window expires" do
+    @post.update_column(:created_at, (EDIT_WINDOW_SECONDS + 1).seconds.ago)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch post_path(@post), params: { post: { title: "Late Edit", body: "too late" } }
+    assert_redirected_to post_path(@post)
+    assert_match /no longer be edited/i, flash[:alert]
+  end
 end
