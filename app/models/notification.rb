@@ -20,7 +20,7 @@ class Notification < ApplicationRecord
     case notifiable
     when Post  then notifiable
     when Reply then notifiable.post
-    else raise "Unknown notifiable type for target_post: #{notifiable.class}"
+    else raise ArgumentError, "Unknown notifiable type for target_post: #{notifiable.class}"
     end
   end
 end

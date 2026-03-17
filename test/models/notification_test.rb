@@ -91,4 +91,11 @@ class NotificationTest < ActiveSupport::TestCase
     reply_notif = Notification.create!(user: @user, actor: @actor, notifiable: @reply, event_type: :reply_to_post)
     assert_equal @post, reply_notif.target_post
   end
+
+  test "target_post raises ArgumentError for unknown notifiable type" do
+    n = Notification.create!(user: @user, actor: @actor, notifiable: @reply, event_type: :reply_to_post)
+    unknown = Object.new
+    n.define_singleton_method(:notifiable) { unknown }
+    assert_raises(ArgumentError) { n.target_post }
+  end
 end
