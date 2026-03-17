@@ -4,7 +4,9 @@
 
 ## Overview
 
-Allow authenticated users to edit their own posts and replies within a configurable time window. Display a "last edited at" timestamp on posts/replies that have been modified. Sorting and ordering logic is unchanged — edits do not affect post ranking.
+Allow authenticated users to edit their own posts and replies within a configurable time window (default 1 hour). Display a "last edited at" timestamp on posts/replies that have been modified. Sorting and ordering logic is unchanged — edits do not affect post ranking.
+
+**Edit window reference point:** The window is always measured from `created_at`, not from `last_edited_at`. Editing does not extend the window. `last_edited_at` is used only for display purposes.
 
 ---
 
@@ -12,18 +14,27 @@ Allow authenticated users to edit their own posts and replies within a configura
 
 ### Migrations
 
-Two new migrations, one for `posts` and one for `replies`:
+Two new migrations, one for `posts` and one for `replies`. Use a DB-level default of `NOW()` so the column is initialized correctly at INSERT time without requiring application-level callbacks:
 
-1. Add `last_edited_at` as a nullable datetime column
-2. Backfill existing rows: `UPDATE posts SET last_edited_at = created_at` (same for replies)
-3. Add NOT NULL constraint
+```ruby
+# Step 1: add column with DB default (covers new rows automatically)
+add_column :posts, :last_edited_at, :datetime, default: -> { "NOW()" }
+
+# Step 2: backfill existing rows
+execute "UPDATE posts SET last_edited_at = created_at"
+
+# Step 3: add NOT NULL constraint
+# Using change_column_null is acceptable for this small app (brief table lock)
+change_column_null :posts, :last_edited_at, false
+```
+
+Same pattern for `replies`. Because `last_edited_at` and `created_at` are both set in the same INSERT statement, they will be exactly equal on new records, making the `edited?` check reliable.
 
 ### Models
 
-Both `Post` and `Reply` get:
+No `before_create` callback needed — the DB default handles initialization.
 
-- A `before_create` callback: `self.last_edited_at = created_at || Time.current`
-- A helper method:
+Both `Post` and `Reply` get a helper method:
 
 ```ruby
 def edited?
@@ -47,7 +58,7 @@ Change the edit window by setting the `EDIT_WINDOW_SECONDS` environment variable
 
 ### Routes
 
-Replies resource gains `edit` and `update` actions (posts already has them via full `resources`):
+Replies resource gains `edit` and `update` (posts already has them via full `resources`):
 
 ```ruby
 resources :posts do
@@ -59,25 +70,38 @@ end
 
 New actions: `edit`, `update`
 
-New `before_action` guards (on `edit` and `update`):
-- `require_login` — existing, extended to cover edit/update
-- `check_ownership` — `@post.user == current_user`, redirects with alert if not
-- `check_edit_window` — `Time.current - @post.created_at <= EDIT_WINDOW_SECONDS`, redirects with alert if expired
+**Before action changes:**
+- `require_login` — already on `[:new, :create]`; extend to also cover `[:edit, :update]`
+- `check_ownership` — new; `@post.user == current_user`, redirects to post with alert if not
+- `check_edit_window` — new; `Time.current - @post.created_at <= EDIT_WINDOW_SECONDS`, redirects to post with alert if expired
 
-On successful `update`:
-- Set `last_edited_at = Time.current`
-- Save and redirect to post show page
-- `last_replied_at` is **never** touched by edits — sort order unaffected
+Both new guards apply to `[:edit, :update]`.
+
+**On successful `update`:**
+- Set `last_edited_at = Time.current` before saving
+- Redirect to post show page
+
+**On failed `update` (validation error):**
+- Re-assign `@categories = Category.all.order(:name)` (required for the category dropdown)
+- Render `:edit`, `status: :unprocessable_entity`
+
+`last_replied_at` is **never** touched by edits — sort order unaffected.
 
 ### RepliesController
 
 New actions: `edit`, `update`
 
-Same guards as PostsController (`require_login`, `check_ownership`, `check_edit_window`) applied to `edit` and `update`.
+**Before action changes:**
+- `require_login` — already applies to all actions; no change needed
+- `check_ownership` — new; applied to `[:edit, :update]`. The existing inline ownership check in `destroy` is left as-is
+- `check_edit_window` — new; applied to `[:edit, :update]`
 
-On successful `update`:
-- Set `last_edited_at = Time.current`
+**On successful `update`:**
+- Set `last_edited_at = Time.current` before saving
 - Redirect to parent post show page
+
+**On failed `update` (validation error):**
+- Render `:edit`, `status: :unprocessable_entity`
 
 ---
 
@@ -90,7 +114,7 @@ On successful `update`:
 
 ### Edit Link (posts/show.html.erb)
 
-Shown next to the post/reply timestamp. Conditionally rendered when:
+Shown inline next to the post/reply timestamp. Conditionally rendered when:
 - `current_user == resource.user`
 - `Time.current - resource.created_at <= EDIT_WINDOW_SECONDS`
 
@@ -114,3 +138,4 @@ last edited at 17 Mar 2026 14:32
 - `last_replied_at` on posts — only updated by reply create/destroy, not edits
 - Rate limiting and ban checks — only apply to create actions
 - Pagination and category filtering — unchanged
+- `destroy` ownership check in `RepliesController` — left as existing inline check
