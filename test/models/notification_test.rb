@@ -81,4 +81,14 @@ class NotificationTest < ActiveSupport::TestCase
     n.mark_as_read!
     assert_equal original_read_at, n.reload.read_at
   end
+
+  test "target_post returns the post when notifiable is a Post" do
+    post_notif = Notification.create!(user: @user, actor: @actor, notifiable: @post, event_type: :moderation)
+    assert_equal @post, post_notif.target_post
+  end
+
+  test "target_post returns parent post when notifiable is a Reply" do
+    reply_notif = Notification.create!(user: @user, actor: @actor, notifiable: @reply, event_type: :reply_to_post)
+    assert_equal @post, reply_notif.target_post
+  end
 end

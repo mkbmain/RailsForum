@@ -15,7 +15,7 @@
   <% else %>
     <div class="space-y-2">
       <% @notifications.each do |n| %>
-        <% post_link = n.notifiable.is_a?(Post) ? post_path(n.notifiable) : post_path(n.notifiable.post) %>
+        <% post_link = post_path(n.target_post) %>
         <div class="bg-white border border-stone-200 rounded-xl p-4 flex items-start gap-3 <%= n.read? ? '' : 'bg-teal-50 border-teal-200' %>">
           <%# Actor avatar %>
           <% if n.actor.avatar_url.present? %>

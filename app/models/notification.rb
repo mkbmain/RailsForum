@@ -15,4 +15,12 @@ class Notification < ApplicationRecord
   def mark_as_read!
     update(read_at: Time.current) unless read?
   end
+
+  def target_post
+    case notifiable
+    when Post  then notifiable
+    when Reply then notifiable.post
+    else raise "Unknown notifiable type for target_post: #{notifiable.class}"
+    end
+  end
 end
