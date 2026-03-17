@@ -24,6 +24,23 @@ class UsersController < ApplicationController
   end
 
   def update
+    permitted = params.require(:user).permit(:name, :bio, :current_password, :password, :password_confirmation)
+
+    if permitted[:password].present?
+      unless @profile_user.authenticate(permitted[:current_password].to_s)
+        @profile_user.errors.add(:base, "Current password is incorrect")
+        render :edit, status: :unprocessable_entity and return
+      end
+      attrs = permitted.except(:current_password).to_h
+    else
+      attrs = permitted.slice(:name, :bio).to_h
+    end
+
+    if @profile_user.update(attrs)
+      redirect_to user_path(@profile_user), notice: "Profile updated."
+    else
+      render :edit, status: :unprocessable_entity
+    end
   end
 
   def show
