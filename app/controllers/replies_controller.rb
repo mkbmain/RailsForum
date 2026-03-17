@@ -18,14 +18,19 @@ class RepliesController < ApplicationController
   end
 
   def destroy
-    @post = Post.find(params[:post_id])
+    @post  = Post.find(params[:post_id])
     @reply = @post.replies.find(params[:id])
-    unless @reply.user == current_user
-      redirect_to @post, alert: "Not authorized to delete this reply.", status: :see_other
-      return
+
+    if current_user.moderator? && can_moderate?(@reply.user)
+      @reply.update!(removed_at: Time.current, removed_by: current_user)
+      @post.update_column(:last_replied_at, @post.replies.visible.maximum(:created_at))
+      redirect_to @post, notice: "Reply removed."
+    elsif @reply.user == current_user
+      @reply.destroy
+      redirect_to @post, notice: "Reply deleted."
+    else
+      redirect_to @post, alert: "Not authorized.", status: :see_other
     end
-    @reply.destroy
-    redirect_to @post, notice: "Reply deleted."
   end
 
   private

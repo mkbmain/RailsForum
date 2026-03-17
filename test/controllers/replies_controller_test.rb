@@ -6,6 +6,14 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     @user = User.create!(email: "u@example.com", name: "User", password: "pass123",
                          password_confirmation: "pass123", provider_id: 3)
     @post = Post.create!(user: @user, title: "A Post", body: "Post body")
+    @sub_admin = User.create!(email: "sub@example.com", name: "Sub",
+                               password: "pass123", password_confirmation: "pass123",
+                               provider_id: 3)
+    @sub_admin.roles << Role.find_by!(name: Role::SUB_ADMIN)
+    @admin = User.create!(email: "admin@example.com", name: "Admin",
+                          password: "pass123", password_confirmation: "pass123",
+                          provider_id: 3)
+    @admin.roles << Role.find_by!(name: Role::ADMIN)
   end
 
   test "POST /posts/:post_id/replies requires login" do
@@ -131,6 +139,57 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     assert_difference "Reply.count", 1 do
       post post_replies_path(@post), params: { reply: { body: "allowed reply" } }
     end
+  end
+
+  # ---- moderation: reply removal ----
+
+  test "DELETE reply as sub_admin soft-deletes instead of hard-deletes" do
+    reply = Reply.create!(post: @post, user: @user, body: "A reply")
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    assert_no_difference "Reply.count" do
+      delete post_reply_path(@post, reply)
+    end
+    assert reply.reload.removed?
+    assert_equal @sub_admin.id, reply.reload.removed_by_id
+    assert_redirected_to post_path(@post)
+  end
+
+  test "DELETE reply as admin soft-deletes" do
+    reply = Reply.create!(post: @post, user: @user, body: "A reply")
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    assert_no_difference "Reply.count" do
+      delete post_reply_path(@post, reply)
+    end
+    assert reply.reload.removed?
+  end
+
+  test "DELETE reply as sub_admin targeting another sub_admin's reply is forbidden" do
+    other_sub = User.create!(email: "sub2@example.com", name: "Sub2",
+                              password: "pass123", password_confirmation: "pass123",
+                              provider_id: 3)
+    other_sub.roles << Role.find_by!(name: Role::SUB_ADMIN)
+    reply = Reply.create!(post: @post, user: other_sub, body: "Sub reply")
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    delete post_reply_path(@post, reply)
+    assert_not reply.reload.removed?
+    assert_redirected_to post_path(@post)
+    assert_match /Not authorized/, flash[:alert]
+  end
+
+  test "DELETE reply as moderator recalculates post last_replied_at" do
+    reply = Reply.create!(post: @post, user: @user, body: "Only reply")
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    delete post_reply_path(@post, reply)
+    assert_nil @post.reload.last_replied_at
+  end
+
+  test "owner hard-delete still works after moderation path added" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    reply = Reply.create!(post: @post, user: @user, body: "My reply")
+    assert_difference "Reply.count", -1 do
+      delete post_reply_path(@post, reply)
+    end
+    assert_redirected_to post_path(@post)
   end
 
   test "DELETE /posts/:post_id/replies/:id is unaffected by ban" do
