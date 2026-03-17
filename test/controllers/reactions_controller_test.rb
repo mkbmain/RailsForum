@@ -74,4 +74,14 @@ class ReactionsControllerTest < ActionDispatch::IntegrationTest
     post post_reactions_path(@post), params: { emoji: "👍" }
     assert_response :not_found
   end
+
+  test "DELETE on hidden post returns 404" do
+    reaction = Reaction.create!(user: @user, post: @post, emoji: "👍")
+    @post.update_column(:removed_at, Time.current)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    assert_no_difference "Reaction.count" do
+      delete post_reaction_path(@post, reaction)
+    end
+    assert_response :not_found
+  end
 end
