@@ -13,6 +13,7 @@ class RepliesController < ApplicationController
     @post = Post.find(params[:post_id])
     @reply = @post.replies.build(reply_params.merge(user: current_user))
     if @reply.save
+      NotificationService.reply_created(@reply, current_user: current_user)
       redirect_to @post, notice: "Reply posted!"
     else
       @take    = 20
@@ -41,6 +42,7 @@ class RepliesController < ApplicationController
     if current_user.moderator? && can_moderate?(@reply.user)
       @reply.update!(removed_at: Time.current, removed_by: current_user)
       @post.update_column(:last_replied_at, @post.replies.visible.maximum(:created_at))
+      NotificationService.content_removed(@reply, removed_by: current_user)
       redirect_to @post, notice: "Reply removed."
     elsif @reply.user == current_user
       @reply.destroy

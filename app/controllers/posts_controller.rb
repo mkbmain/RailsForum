@@ -73,6 +73,7 @@ class PostsController < ApplicationController
       return
     end
     @post.update!(removed_at: Time.current, removed_by: current_user)
+    NotificationService.content_removed(@post, removed_by: current_user)
     redirect_to @post, notice: "Post removed."
   end
 
