@@ -500,4 +500,77 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to post_path(@post)
     assert_match /no longer be edited/i, flash[:alert]
   end
+
+  # ---- show view: edit link and last-edited display ----
+
+  test "GET /posts/:id shows edit link for post owner within window" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get post_path(@post)
+    assert_select "a[href=?]", edit_post_path(@post)
+  end
+
+  test "GET /posts/:id hides edit link for non-owner" do
+    other = User.create!(email: "other3@example.com", name: "Other3",
+                         password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    other_post = Post.create!(user: other, title: "Theirs", body: "their body")
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get post_path(other_post)
+    assert_select "a[href=?]", edit_post_path(other_post), count: 0
+  end
+
+  test "GET /posts/:id hides edit link after edit window expires" do
+    @post.update_column(:created_at, (EDIT_WINDOW_SECONDS + 1).seconds.ago)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get post_path(@post)
+    assert_select "a[href=?]", edit_post_path(@post), count: 0
+  end
+
+  test "GET /posts/:id hides edit link when not logged in" do
+    get post_path(@post)
+    assert_select "a[href=?]", edit_post_path(@post), count: 0
+  end
+
+  test "GET /posts/:id shows last edited at when post has been edited" do
+    @post.update_column(:last_edited_at, @post.created_at + 5.minutes)
+    get post_path(@post)
+    assert_select ".last-edited-at"
+  end
+
+  test "GET /posts/:id does not show last edited at on fresh post" do
+    get post_path(@post)
+    assert_select ".last-edited-at", count: 0
+  end
+
+  test "GET /posts/:id shows last edited at on reply that has been edited" do
+    reply_user = User.create!(email: "rv2@example.com", name: "RV2",
+                               password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    reply = Reply.create!(post: @post, user: reply_user, body: "a reply")
+    reply.update_column(:last_edited_at, reply.created_at + 5.minutes)
+    get post_path(@post)
+    assert_select ".last-edited-at"
+  end
+
+  test "GET /posts/:id shows edit link for reply owner within window" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    reply = Reply.create!(post: @post, user: @user, body: "My reply")
+    get post_path(@post)
+    assert_select "a[href=?]", edit_post_reply_path(@post, reply)
+  end
+
+  test "GET /posts/:id hides edit link for reply non-owner" do
+    other = User.create!(email: "other4@example.com", name: "Other4",
+                         password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    reply = Reply.create!(post: @post, user: other, body: "Their reply")
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get post_path(@post)
+    assert_select "a[href=?]", edit_post_reply_path(@post, reply), count: 0
+  end
+
+  test "GET /posts/:id hides edit link for reply after edit window expires" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    reply = Reply.create!(post: @post, user: @user, body: "My reply")
+    reply.update_column(:created_at, (EDIT_WINDOW_SECONDS + 1).seconds.ago)
+    get post_path(@post)
+    assert_select "a[href=?]", edit_post_reply_path(@post, reply), count: 0
+  end
 end
