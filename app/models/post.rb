@@ -1,8 +1,11 @@
 class Post < ApplicationRecord
   belongs_to :user
   belongs_to :category
+  belongs_to :removed_by, class_name: "User", optional: true
 
   has_many :replies, dependent: :destroy
+
+  scope :visible, -> { where(removed_at: nil) }
 
   attribute :category_id, :integer, default: 1
 
@@ -12,4 +15,6 @@ class Post < ApplicationRecord
   def last_activity_at
     last_replied_at || created_at
   end
+
+  def removed? = removed_at.present?
 end

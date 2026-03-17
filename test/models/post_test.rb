@@ -35,4 +35,26 @@ class PostTest < ActiveSupport::TestCase
     post.update_column(:last_replied_at, time)
     assert_equal time.to_i, post.reload.last_activity_at.to_i
   end
+
+  test "removed? returns false when removed_at is nil" do
+    post = Post.create!(user: @user, title: "T", body: "B")
+    assert_not post.removed?
+  end
+
+  test "removed? returns true when removed_at is set" do
+    post = Post.create!(user: @user, title: "T", body: "B")
+    post.update_column(:removed_at, Time.current)
+    assert post.removed?
+  end
+
+  test "visible scope excludes removed posts" do
+    post = Post.create!(user: @user, title: "T", body: "B")
+    post.update_column(:removed_at, Time.current)
+    assert_not_includes Post.visible, post
+  end
+
+  test "visible scope includes non-removed posts" do
+    post = Post.create!(user: @user, title: "T", body: "B")
+    assert_includes Post.visible, post
+  end
 end
