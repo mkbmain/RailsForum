@@ -28,7 +28,12 @@ end
 - `unread` / `read` replace all raw `where(read_at: nil)` calls going forward
 - `mark_as_read!` is idempotent — safe to call even if already read, no unnecessary write
 
-**No controller changes in this pass.** The scopes and method are available for future use.
+The existing controller already has two raw `where(read_at: nil)` calls (lines 9 and 19 of `notifications_controller.rb`) and uses `update` directly in the `read` action. These are updated as part of this section to use the new scopes and method — otherwise the problem of duplicated raw queries is not actually resolved, just given a parallel API.
+
+**Controller changes:**
+- `@unread_count` line: `current_user.notifications.unread.count`
+- `read_all` action: `current_user.notifications.unread.update_all(read_at: Time.current)`
+- `read` action: `notification&.mark_as_read!`
 
 ---
 
@@ -49,9 +54,12 @@ def target_post
   case notifiable
   when Post  then notifiable
   when Reply then notifiable.post
+  else raise "Unknown notifiable type for target_post: #{notifiable.class}"
   end
 end
 ```
+
+The `else` raises a descriptive error rather than returning `nil`. Passing `nil` to `post_path` would raise an opaque `ActionController::UrlGenerationError`; a descriptive raise makes the failure obvious at the point of introduction of a new notifiable type.
 
 Update the view to use it:
 
@@ -111,7 +119,7 @@ Rails raises `ActiveRecord::RecordNotFound` (→ 404) if the post is hidden or d
 
 ## Out of Scope
 
-- NotificationsController refactor (deferred — needs more thought)
+- NotificationsController deep refactor (deferred — the three targeted call-site updates in Section 1 are included; broader restructuring of the controller is deferred)
 - Eager load fix for `notifiable.post` (deferred — performance, not correctness)
 - Full-text search upgrade (deferred — performance)
 - User profile activity pagination efficiency (deferred — performance)
@@ -129,5 +137,5 @@ Each fix has a clear test surface:
 | `read` scope | `Notification` model test: read returns only read records |
 | `mark_as_read!` | Model test: idempotent, sets `read_at`, no-ops if already read |
 | `target_post` | Model test: returns post for Post notifiable, parent post for Reply notifiable |
-| Search pagination | Controller test: exactly `@take` results shows no "Next", `@take + 1` results shows "Next" |
+| Search pagination | Controller test: exactly `@take` DB results → no "Next", only `@take` items rendered; `@take + 1` DB results → "Next" shown, only `@take` items rendered (probe record suppressed) |
 | Reactions visibility | Controller test: reaction on hidden post returns 404 |
