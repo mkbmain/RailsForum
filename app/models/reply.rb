@@ -9,6 +9,11 @@ class Reply < ApplicationRecord
 
   def removed? = removed_at.present?
 
+  def edited?
+    last_edited_at != created_at
+  end
+
+  after_create_commit { update_column(:last_edited_at, created_at) }
   after_create  :update_post_last_replied_at
   after_destroy :recalculate_post_last_replied_at
 

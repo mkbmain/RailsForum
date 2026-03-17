@@ -64,4 +64,15 @@ class ReplyTest < ActiveSupport::TestCase
     reply = Reply.create!(post: @post, user: @user, body: "hello")
     assert_includes @post.replies.visible, reply
   end
+
+  test "edited? returns false for a new reply" do
+    reply = Reply.create!(post: @post, user: @user, body: "fresh reply")
+    assert_not reply.reload.edited?
+  end
+
+  test "edited? returns true after last_edited_at is updated" do
+    reply = Reply.create!(post: @post, user: @user, body: "fresh reply")
+    reply.update_column(:last_edited_at, reply.created_at + 1.second)
+    assert reply.reload.edited?
+  end
 end

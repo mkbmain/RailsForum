@@ -57,4 +57,15 @@ class PostTest < ActiveSupport::TestCase
     post = Post.create!(user: @user, title: "T", body: "B")
     assert_includes Post.visible, post
   end
+
+  test "edited? returns false for a new post" do
+    post = Post.create!(user: @user, title: "Fresh", body: "body")
+    assert_not post.reload.edited?
+  end
+
+  test "edited? returns true after last_edited_at is updated" do
+    post = Post.create!(user: @user, title: "Fresh", body: "body")
+    post.update_column(:last_edited_at, post.created_at + 1.second)
+    assert post.reload.edited?
+  end
 end
