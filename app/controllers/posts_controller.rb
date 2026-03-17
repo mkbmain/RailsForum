@@ -2,13 +2,14 @@ class PostsController < ApplicationController
   include RateLimitable
   include Bannable
 
-  before_action :require_login, only: [:new, :create]
+  before_action :require_login, only: [:new, :create, :destroy]
+  before_action :require_moderator, only: [:destroy]
   before_action :check_not_banned, only: [:create]
   before_action :check_rate_limit, only: [:create]
 
   def index
     @categories = Category.all.order(:name)
-    posts = Post.includes(:user, :category, :replies).order(Arel.sql("COALESCE(last_replied_at, created_at) DESC"))
+    posts = Post.visible.includes(:user, :category, :replies).order(Arel.sql("COALESCE(last_replied_at, created_at) DESC"))
 
     category_id = params[:category].to_i
     posts = posts.where(category_id: category_id) if category_id > 0
@@ -39,6 +40,16 @@ class PostsController < ApplicationController
       @categories = Category.all.order(:name)
       render :new, status: :unprocessable_entity
     end
+  end
+
+  def destroy
+    @post = Post.find(params[:id])
+    unless can_moderate?(@post.user)
+      redirect_to @post, alert: "Not authorized to remove this post."
+      return
+    end
+    @post.update!(removed_at: Time.current, removed_by: current_user)
+    redirect_to @post, notice: "Post removed."
   end
 
   private

@@ -6,6 +6,14 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     @user = User.create!(email: "u@example.com", name: "User", password: "pass123",
                          password_confirmation: "pass123", provider_id: 3)
     @post = Post.create!(user: @user, title: "Hello World", body: "First post body")
+    @sub_admin = User.create!(email: "sub@example.com", name: "Sub",
+                               password: "pass123", password_confirmation: "pass123",
+                               provider_id: 3)
+    @sub_admin.roles << Role.find_by!(name: Role::SUB_ADMIN)
+    @admin = User.create!(email: "admin@example.com", name: "Admin",
+                          password: "pass123", password_confirmation: "pass123",
+                          provider_id: 3)
+    @admin.roles << Role.find_by!(name: Role::ADMIN)
   end
 
   test "GET /posts lists posts" do
@@ -329,5 +337,52 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     post login_path, params: { email: "u@example.com", password: "pass123" }
     get new_post_path
     assert_response :success
+  end
+
+  # ---- moderation: post removal ----
+
+  test "DELETE /posts/:id requires login" do
+    delete post_path(@post)
+    assert_redirected_to login_path
+  end
+
+  test "DELETE /posts/:id is forbidden for creator-only user" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    delete post_path(@post)
+    assert_redirected_to root_path
+    assert_match /Not authorized/, flash[:alert]
+  end
+
+  test "DELETE /posts/:id soft-deletes post as sub_admin" do
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    delete post_path(@post)
+    assert_redirected_to post_path(@post)
+    assert @post.reload.removed?
+    assert_equal @sub_admin.id, @post.reload.removed_by_id
+  end
+
+  test "DELETE /posts/:id soft-deletes post as admin" do
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    delete post_path(@post)
+    assert_redirected_to post_path(@post)
+    assert @post.reload.removed?
+  end
+
+  test "DELETE /posts/:id is forbidden when sub_admin targets another sub_admin's post" do
+    other_sub = User.create!(email: "sub2@example.com", name: "Sub2",
+                              password: "pass123", password_confirmation: "pass123",
+                              provider_id: 3)
+    other_sub.roles << Role.find_by!(name: Role::SUB_ADMIN)
+    their_post = Post.create!(user: other_sub, title: "Sub post", body: "body")
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    delete post_path(their_post)
+    assert_not their_post.reload.removed?
+    assert_match /Not authorized/, flash[:alert]
+  end
+
+  test "GET /posts index excludes removed posts" do
+    @post.update_column(:removed_at, Time.current)
+    get posts_path
+    assert_select ".post-card", count: 0
   end
 end
