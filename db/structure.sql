@@ -79,6 +79,8 @@ CREATE TABLE public.posts (
     updated_at timestamp(6) without time zone NOT NULL,
     category_id smallint DEFAULT 1 NOT NULL,
     last_replied_at timestamp(6) without time zone,
+    removed_at timestamp(6) without time zone,
+    removed_by_id bigint,
     CONSTRAINT posts_body_max_length CHECK ((char_length(body) <= 1000))
 );
 
@@ -123,6 +125,8 @@ CREATE TABLE public.replies (
     body text NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
+    removed_at timestamp(6) without time zone,
+    removed_by_id bigint,
     CONSTRAINT replies_body_max_length CHECK ((char_length(body) <= 1000))
 );
 
@@ -147,6 +151,18 @@ ALTER SEQUENCE public.replies_id_seq OWNED BY public.replies.id;
 
 
 --
+-- Name: roles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.roles (
+    id smallint NOT NULL,
+    name character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -166,7 +182,8 @@ CREATE TABLE public.user_bans (
     banned_from timestamp(6) without time zone DEFAULT now() NOT NULL,
     banned_until timestamp(6) without time zone NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    banned_by_id bigint
 );
 
 
@@ -187,6 +204,38 @@ CREATE SEQUENCE public.user_bans_id_seq
 --
 
 ALTER SEQUENCE public.user_bans_id_seq OWNED BY public.user_bans.id;
+
+
+--
+-- Name: user_roles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_roles (
+    id integer NOT NULL,
+    user_id bigint NOT NULL,
+    role_id smallint NOT NULL,
+    created_at timestamp(6) without time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: user_roles_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_roles_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_roles_id_seq OWNED BY public.user_roles.id;
 
 
 --
@@ -254,6 +303,13 @@ ALTER TABLE ONLY public.user_bans ALTER COLUMN id SET DEFAULT nextval('public.us
 
 
 --
+-- Name: user_roles id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_roles ALTER COLUMN id SET DEFAULT nextval('public.user_roles_id_seq'::regclass);
+
+
+--
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -317,6 +373,14 @@ ALTER TABLE ONLY public.replies
 
 
 --
+-- Name: roles roles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.roles
+    ADD CONSTRAINT roles_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -330,6 +394,14 @@ ALTER TABLE ONLY public.schema_migrations
 
 ALTER TABLE ONLY public.user_bans
     ADD CONSTRAINT user_bans_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_roles user_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_roles
+    ADD CONSTRAINT user_roles_pkey PRIMARY KEY (id);
 
 
 --
@@ -376,6 +448,13 @@ CREATE INDEX index_replies_on_user_id ON public.replies USING btree (user_id);
 
 
 --
+-- Name: index_roles_on_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_roles_on_name ON public.roles USING btree (name);
+
+
+--
 -- Name: index_user_bans_on_ban_reason_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -394,6 +473,13 @@ CREATE INDEX index_user_bans_on_user_id ON public.user_bans USING btree (user_id
 --
 
 CREATE INDEX index_user_bans_on_user_id_and_banned_until ON public.user_bans USING btree (user_id, banned_until);
+
+
+--
+-- Name: index_user_roles_on_user_id_and_role_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_user_roles_on_user_id_and_role_id ON public.user_roles USING btree (user_id, role_id);
 
 
 --
@@ -424,6 +510,30 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.replies
     ADD CONSTRAINT fk_rails_256e4b72c5 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: user_roles fk_rails_318345354e; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_roles
+    ADD CONSTRAINT fk_rails_318345354e FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: user_roles fk_rails_3369e0d5fc; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_roles
+    ADD CONSTRAINT fk_rails_3369e0d5fc FOREIGN KEY (role_id) REFERENCES public.roles(id);
+
+
+--
+-- Name: posts fk_rails_3f2d268207; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.posts
+    ADD CONSTRAINT fk_rails_3f2d268207 FOREIGN KEY (removed_by_id) REFERENCES public.users(id);
 
 
 --
@@ -467,12 +577,30 @@ ALTER TABLE ONLY public.user_bans
 
 
 --
+-- Name: replies fk_rails_e64bb1a837; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.replies
+    ADD CONSTRAINT fk_rails_e64bb1a837 FOREIGN KEY (removed_by_id) REFERENCES public.users(id);
+
+
+--
+-- Name: user_bans fk_rails_ffcefbeed8; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_bans
+    ADD CONSTRAINT fk_rails_ffcefbeed8 FOREIGN KEY (banned_by_id) REFERENCES public.users(id);
+
+
+--
 -- PostgreSQL database dump complete
 --
 
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260317102012'),
+('20260317101956'),
 ('20260316134716'),
 ('20260316134715'),
 ('20260315200000'),
