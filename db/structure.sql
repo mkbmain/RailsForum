@@ -67,6 +67,42 @@ CREATE TABLE public.categories (
 
 
 --
+-- Name: notifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.notifications (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    actor_id bigint NOT NULL,
+    notifiable_type character varying NOT NULL,
+    notifiable_id bigint NOT NULL,
+    event_type smallint NOT NULL,
+    read_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.notifications_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
+
+
+--
 -- Name: posts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -113,6 +149,39 @@ CREATE TABLE public.providers (
     id smallint NOT NULL,
     name character varying(50) NOT NULL
 );
+
+
+--
+-- Name: reactions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.reactions (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    post_id bigint NOT NULL,
+    emoji character varying(10) NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: reactions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.reactions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: reactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.reactions_id_seq OWNED BY public.reactions.id;
 
 
 --
@@ -253,7 +322,8 @@ CREATE TABLE public.users (
     provider_id smallint DEFAULT 3 NOT NULL,
     uid character varying,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    bio text
 );
 
 
@@ -284,10 +354,24 @@ ALTER TABLE ONLY public.ban_reasons ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
+-- Name: notifications id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('public.notifications_id_seq'::regclass);
+
+
+--
 -- Name: posts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.posts ALTER COLUMN id SET DEFAULT nextval('public.posts_id_seq'::regclass);
+
+
+--
+-- Name: reactions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reactions ALTER COLUMN id SET DEFAULT nextval('public.reactions_id_seq'::regclass);
 
 
 --
@@ -351,6 +435,14 @@ ALTER TABLE ONLY public.categories
 
 
 --
+-- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: posts posts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -364,6 +456,14 @@ ALTER TABLE ONLY public.posts
 
 ALTER TABLE ONLY public.providers
     ADD CONSTRAINT providers_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reactions reactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reactions
+    ADD CONSTRAINT reactions_pkey PRIMARY KEY (id);
 
 
 --
@@ -422,6 +522,41 @@ CREATE UNIQUE INDEX index_ban_reasons_on_name ON public.ban_reasons USING btree 
 
 
 --
+-- Name: index_notifications_on_actor_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notifications_on_actor_id ON public.notifications USING btree (actor_id);
+
+
+--
+-- Name: index_notifications_on_dedup_fields; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notifications_on_dedup_fields ON public.notifications USING btree (user_id, notifiable_id, notifiable_type, event_type, created_at);
+
+
+--
+-- Name: index_notifications_on_notifiable; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notifications_on_notifiable ON public.notifications USING btree (notifiable_type, notifiable_id);
+
+
+--
+-- Name: index_notifications_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notifications_on_user_id ON public.notifications USING btree (user_id);
+
+
+--
+-- Name: index_notifications_on_user_id_unread; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_notifications_on_user_id_unread ON public.notifications USING btree (user_id) WHERE (read_at IS NULL);
+
+
+--
 -- Name: index_posts_on_category_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -433,6 +568,27 @@ CREATE INDEX index_posts_on_category_id ON public.posts USING btree (category_id
 --
 
 CREATE INDEX index_posts_on_user_id ON public.posts USING btree (user_id);
+
+
+--
+-- Name: index_reactions_on_post_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_reactions_on_post_id ON public.reactions USING btree (post_id);
+
+
+--
+-- Name: index_reactions_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_reactions_on_user_id ON public.reactions USING btree (user_id);
+
+
+--
+-- Name: index_reactions_on_user_id_and_post_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_reactions_on_user_id_and_post_id ON public.reactions USING btree (user_id, post_id);
 
 
 --
@@ -496,6 +652,14 @@ CREATE UNIQUE INDEX index_users_on_email ON public.users USING btree (email);
 --
 
 CREATE UNIQUE INDEX index_users_on_provider_id_and_uid ON public.users USING btree (provider_id, uid) WHERE (uid IS NOT NULL);
+
+
+--
+-- Name: notifications fk_rails_06a39bb8cc; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT fk_rails_06a39bb8cc FOREIGN KEY (actor_id) REFERENCES public.users(id);
 
 
 --
@@ -563,6 +727,22 @@ ALTER TABLE ONLY public.posts
 
 
 --
+-- Name: reactions fk_rails_9f02fc96a0; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reactions
+    ADD CONSTRAINT fk_rails_9f02fc96a0 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: notifications fk_rails_b080fb4855; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notifications
+    ADD CONSTRAINT fk_rails_b080fb4855 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: user_bans fk_rails_b27db52384; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -576,6 +756,14 @@ ALTER TABLE ONLY public.user_bans
 
 ALTER TABLE ONLY public.user_bans
     ADD CONSTRAINT fk_rails_c15024a086 FOREIGN KEY (ban_reason_id) REFERENCES public.ban_reasons(id);
+
+
+--
+-- Name: reactions fk_rails_cb32010de7; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.reactions
+    ADD CONSTRAINT fk_rails_cb32010de7 FOREIGN KEY (post_id) REFERENCES public.posts(id);
 
 
 --
@@ -601,6 +789,9 @@ ALTER TABLE ONLY public.user_bans
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260317135601'),
+('20260317135600'),
+('20260317135559'),
 ('20260317114403'),
 ('20260317114348'),
 ('20260317102012'),
