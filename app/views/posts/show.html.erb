@@ -50,10 +50,10 @@
 
   <div class="mt-8">
     <h2 class="text-xl font-semibold mb-4">
-      Replies (<%= @post.replies.size %>)
+      Replies (<%= @reply_count %>)
     </h2>
 
-    <% @post.replies.each do |reply| %>
+    <% @replies.each do |reply| %>
       <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
         <div class="flex items-center gap-2 mb-2">
           <% if reply.user.avatar_url.present? %>
@@ -100,6 +100,19 @@
         </div>
       </div>
     <% end %>
+
+    <div class="flex justify-between mt-4 mb-6">
+      <% if @page > 1 %>
+        <%= link_to "← Previous", post_path(@post, page: @page - 1, take: @take),
+              class: "text-teal-700 hover:underline font-medium text-sm" %>
+      <% else %>
+        <span></span>
+      <% end %>
+      <% if @replies.size >= @take %>
+        <%= link_to "Next →", post_path(@post, page: @page + 1, take: @take),
+              class: "text-teal-700 hover:underline font-medium text-sm" %>
+      <% end %>
+    </div>
 
     <% if logged_in? %>
       <div class="mt-6 bg-white border border-gray-200 rounded-lg p-4">

@@ -26,8 +26,16 @@ class PostsController < ApplicationController
   end
 
   def show
-    @post  = Post.includes(:category, replies: :user).find(params[:id])
+    @post  = Post.includes(:category).find(params[:id])
     @reply = Reply.new
+
+    take = (params[:take] || 20).to_i.clamp(1, 100)
+    page = [ (params[:page] || 1).to_i, 1 ].max
+
+    @replies      = @post.replies.includes(:user).order(:created_at).limit(take).offset((page - 1) * take)
+    @reply_count  = @post.replies.count
+    @take         = take
+    @page         = page
   end
 
   def new
