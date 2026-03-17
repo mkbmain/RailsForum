@@ -15,7 +15,10 @@ class RepliesController < ApplicationController
     if @reply.save
       redirect_to @post, notice: "Reply posted!"
     else
-      @post = Post.includes(replies: :user).find(params[:post_id])
+      @take    = 20
+      @page    = 1
+      @replies = @post.replies.includes(:user).order(:created_at).limit(@take).offset(0)
+      @reply_count = @post.replies.count
       render "posts/show", status: :unprocessable_entity
     end
   end
