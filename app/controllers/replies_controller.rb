@@ -5,6 +5,9 @@ class RepliesController < ApplicationController
   before_action :require_login
   before_action :check_not_banned, only: [ :create ]
   before_action :check_rate_limit, only: [ :create ]
+  before_action :set_reply, only: [ :edit, :update ]
+  before_action :check_ownership, only: [ :edit, :update ]
+  before_action :check_edit_window, only: [ :edit, :update ]
 
   def create
     @post = Post.find(params[:post_id])
@@ -14,6 +17,17 @@ class RepliesController < ApplicationController
     else
       @post = Post.includes(replies: :user).find(params[:post_id])
       render "posts/show", status: :unprocessable_entity
+    end
+  end
+
+  def edit
+  end
+
+  def update
+    if @reply.update(reply_params.merge(last_edited_at: Time.current))
+      redirect_to @post, notice: "Reply updated!"
+    else
+      render :edit, status: :unprocessable_entity
     end
   end
 
@@ -34,6 +48,23 @@ class RepliesController < ApplicationController
   end
 
   private
+
+  def set_reply
+    @post  = Post.find(params[:post_id])
+    @reply = @post.replies.find(params[:id])
+  end
+
+  def check_ownership
+    unless @reply.user == current_user
+      redirect_to @post, alert: "Not authorized to edit this reply."
+    end
+  end
+
+  def check_edit_window
+    if Time.current - @reply.created_at > EDIT_WINDOW_SECONDS
+      redirect_to @post, alert: "This reply can no longer be edited (edit window has expired)."
+    end
+  end
 
   def reply_params
     params.require(:reply).permit(:body)

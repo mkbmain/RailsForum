@@ -227,4 +227,88 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to post_path(@post)
   end
+
+  # ---- edit / update ----
+
+  test "GET /posts/:post_id/replies/:id/edit requires login" do
+    reply = Reply.create!(post: @post, user: @user, body: "A reply")
+    get edit_post_reply_path(@post, reply)
+    assert_redirected_to login_path
+  end
+
+  test "GET /posts/:post_id/replies/:id/edit renders form when owner and within window" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    reply = Reply.create!(post: @post, user: @user, body: "My reply")
+    get edit_post_reply_path(@post, reply)
+    assert_response :success
+    assert_select "form[action=?]", post_reply_path(@post, reply)
+    assert_select "textarea[name=?]", "reply[body]"
+  end
+
+  test "GET /posts/:post_id/replies/:id/edit is forbidden for non-owner" do
+    other = User.create!(email: "other@example.com", name: "Other",
+                         password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    reply = Reply.create!(post: @post, user: other, body: "Their reply")
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get edit_post_reply_path(@post, reply)
+    assert_redirected_to post_path(@post)
+    assert_match /not authorized/i, flash[:alert]
+  end
+
+  test "GET /posts/:post_id/replies/:id/edit is blocked after edit window expires" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    reply = Reply.create!(post: @post, user: @user, body: "Old reply")
+    reply.update_column(:created_at, (EDIT_WINDOW_SECONDS + 1).seconds.ago)
+    get edit_post_reply_path(@post, reply)
+    assert_redirected_to post_path(@post)
+    assert_match /no longer be edited/i, flash[:alert]
+  end
+
+  test "PATCH /posts/:post_id/replies/:id updates reply and sets last_edited_at" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    reply = Reply.create!(post: @post, user: @user, body: "Original body")
+    original_last_edited_at = reply.last_edited_at
+    travel_to 1.minute.from_now do
+      patch post_reply_path(@post, reply), params: { reply: { body: "Updated body" } }
+    end
+    assert_redirected_to post_path(@post)
+    reply.reload
+    assert_equal "Updated body", reply.body
+    assert reply.last_edited_at > original_last_edited_at
+  end
+
+  test "PATCH /posts/:post_id/replies/:id does not change post last_replied_at" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    reply = Reply.create!(post: @post, user: @user, body: "A reply")
+    @post.update_column(:last_replied_at, 1.hour.ago)
+    original_last_replied_at = @post.reload.last_replied_at
+    patch post_reply_path(@post, reply), params: { reply: { body: "Edited" } }
+    assert_in_delta original_last_replied_at.to_i, @post.reload.last_replied_at.to_i, 1
+  end
+
+  test "PATCH /posts/:post_id/replies/:id is forbidden for non-owner" do
+    other = User.create!(email: "other2@example.com", name: "Other2",
+                         password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    reply = Reply.create!(post: @post, user: other, body: "Their reply")
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch post_reply_path(@post, reply), params: { reply: { body: "Hacked" } }
+    assert_redirected_to post_path(@post)
+    assert_match /not authorized/i, flash[:alert]
+  end
+
+  test "PATCH /posts/:post_id/replies/:id with blank body re-renders edit" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    reply = Reply.create!(post: @post, user: @user, body: "Valid body")
+    patch post_reply_path(@post, reply), params: { reply: { body: "" } }
+    assert_response :unprocessable_entity
+  end
+
+  test "PATCH /posts/:post_id/replies/:id is blocked after edit window expires" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    reply = Reply.create!(post: @post, user: @user, body: "Old reply")
+    reply.update_column(:created_at, (EDIT_WINDOW_SECONDS + 1).seconds.ago)
+    patch post_reply_path(@post, reply), params: { reply: { body: "Too late" } }
+    assert_redirected_to post_path(@post)
+    assert_match /no longer be edited/i, flash[:alert]
+  end
 end
