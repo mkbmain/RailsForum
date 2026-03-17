@@ -4,6 +4,7 @@ class Post < ApplicationRecord
   belongs_to :removed_by, class_name: "User", optional: true
 
   has_many :replies, dependent: :destroy
+  has_many :reactions, dependent: :destroy
 
   scope :visible, -> { where(removed_at: nil) }
 

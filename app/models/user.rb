@@ -2,6 +2,9 @@ class User < ApplicationRecord
   belongs_to :provider
   has_many :posts, dependent: :destroy
   has_many :replies, dependent: :destroy
+  has_many :reactions, dependent: :destroy
+  has_many :notifications, dependent: :destroy
+  has_many :sent_notifications, class_name: "Notification", foreign_key: :actor_id, dependent: :destroy
   has_many :user_bans
   has_many :user_roles
   has_many :roles, through: :user_roles
