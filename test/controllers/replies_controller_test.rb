@@ -176,6 +176,29 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     assert_match /Not authorized/, flash[:alert]
   end
 
+  test "DELETE admin's own reply hard-deletes via owner path" do
+    reply = Reply.create!(post: @post, user: @admin, body: "Admin reply")
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    assert_difference "Reply.count", -1 do
+      delete post_reply_path(@post, reply)
+    end
+    assert_redirected_to post_path(@post)
+  end
+
+  test "DELETE reply as admin targeting another admin's reply soft-deletes (admin can moderate any non-self)" do
+    other_admin = User.create!(email: "admin2@example.com", name: "Admin2",
+                                password: "pass123", password_confirmation: "pass123",
+                                provider_id: 3)
+    other_admin.roles << Role.find_by!(name: Role::ADMIN)
+    reply = Reply.create!(post: @post, user: other_admin, body: "Admin2 reply")
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    assert_no_difference "Reply.count" do
+      delete post_reply_path(@post, reply)
+    end
+    assert reply.reload.removed?
+    assert_redirected_to post_path(@post)
+  end
+
   test "DELETE reply as moderator recalculates post last_replied_at" do
     reply = Reply.create!(post: @post, user: @user, body: "Only reply")
     post login_path, params: { email: "sub@example.com", password: "pass123" }
