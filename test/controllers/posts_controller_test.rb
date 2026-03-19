@@ -600,4 +600,16 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".bg-gray-50.border-gray-200", count: 20
   end
+
+  test "GET /posts/:id reply count excludes removed replies" do
+    reply_user = User.create!(email: "rc2@example.com", name: "RC2",
+                               password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    Reply.create!(post: @post, user: reply_user, body: "visible reply")
+    removed = Reply.create!(post: @post, user: reply_user, body: "removed reply")
+    removed.update_columns(removed_at: Time.current, removed_by_id: @sub_admin.id)
+    get post_path(@post)
+    assert_response :success
+    # Only 1 visible reply; the removed one must not be counted
+    assert_select "h2", text: /Replies \(1\)/
+  end
 end
