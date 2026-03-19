@@ -5,6 +5,8 @@ class Reply < ApplicationRecord
 
   scope :visible, -> { where(removed_at: nil) }
 
+  has_many :reactions, as: :reactionable, dependent: :destroy
+
   validates :body, presence: true, length: { maximum: 1000 }
 
   def removed? = removed_at.present?

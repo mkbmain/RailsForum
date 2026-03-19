@@ -17,7 +17,9 @@ Rails.application.routes.draw do
 
   resources :posts do
     resources :reactions, only: [ :create, :destroy ]
-    resources :replies,   only: [ :create, :destroy, :edit, :update ]
+    resources :replies,   only: [ :create, :destroy, :edit, :update ] do
+      resources :reactions, only: [ :create, :destroy ]
+    end
   end
 
   resources :users, only: [ :show, :edit, :update ] do

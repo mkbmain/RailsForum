@@ -158,10 +158,11 @@ CREATE TABLE public.providers (
 CREATE TABLE public.reactions (
     id bigint NOT NULL,
     user_id bigint NOT NULL,
-    post_id bigint NOT NULL,
+    reactionable_id bigint NOT NULL,
     emoji character varying(10) NOT NULL,
     created_at timestamp(6) without time zone NOT NULL,
-    updated_at timestamp(6) without time zone NOT NULL
+    updated_at timestamp(6) without time zone NOT NULL,
+    reactionable_type character varying NOT NULL
 );
 
 
@@ -571,10 +572,17 @@ CREATE INDEX index_posts_on_user_id ON public.posts USING btree (user_id);
 
 
 --
--- Name: index_reactions_on_post_id; Type: INDEX; Schema: public; Owner: -
+-- Name: index_reactions_on_reactionable; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX index_reactions_on_post_id ON public.reactions USING btree (post_id);
+CREATE INDEX index_reactions_on_reactionable ON public.reactions USING btree (reactionable_type, reactionable_id);
+
+
+--
+-- Name: index_reactions_on_user_and_reactionable; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_reactions_on_user_and_reactionable ON public.reactions USING btree (user_id, reactionable_type, reactionable_id);
 
 
 --
@@ -582,13 +590,6 @@ CREATE INDEX index_reactions_on_post_id ON public.reactions USING btree (post_id
 --
 
 CREATE INDEX index_reactions_on_user_id ON public.reactions USING btree (user_id);
-
-
---
--- Name: index_reactions_on_user_id_and_post_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX index_reactions_on_user_id_and_post_id ON public.reactions USING btree (user_id, post_id);
 
 
 --
@@ -759,14 +760,6 @@ ALTER TABLE ONLY public.user_bans
 
 
 --
--- Name: reactions fk_rails_cb32010de7; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.reactions
-    ADD CONSTRAINT fk_rails_cb32010de7 FOREIGN KEY (post_id) REFERENCES public.posts(id);
-
-
---
 -- Name: replies fk_rails_e64bb1a837; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -789,6 +782,7 @@ ALTER TABLE ONLY public.user_bans
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260319160355'),
 ('20260317135601'),
 ('20260317135600'),
 ('20260317135559'),
