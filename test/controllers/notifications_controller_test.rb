@@ -50,4 +50,20 @@ class NotificationsControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil @notif.reload.read_at
     assert_not_nil notif2.reload.read_at
   end
+
+  test "GET /notifications reply notification links to post with reply anchor" do
+    post login_path, params: { email: "nuser@example.com", password: "pass123" }
+    get notifications_path
+    assert_response :success
+    assert_select "a[href=?]", post_path(@post, anchor: "reply-#{@reply.id}")
+  end
+
+  test "GET /notifications post notification links to post without anchor" do
+    @notif.update_column(:notifiable_type, "Post")
+    @notif.update_column(:notifiable_id,   @post.id)
+    post login_path, params: { email: "nuser@example.com", password: "pass123" }
+    get notifications_path
+    assert_response :success
+    assert_select "a[href=?]", post_path(@post)
+  end
 end

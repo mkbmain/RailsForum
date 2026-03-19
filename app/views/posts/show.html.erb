@@ -57,7 +57,7 @@
     </h2>
 
     <% @replies.first(@take).each do |reply| %>
-      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3" id="reply-<%= reply.id %>">
         <div class="flex items-center gap-2 mb-2">
           <% if reply.user.avatar_url.present? %>
             <%= image_tag reply.user.avatar_url, class: "w-6 h-6 rounded-full", alt: "" %>

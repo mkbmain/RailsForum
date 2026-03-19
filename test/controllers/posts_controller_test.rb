@@ -612,4 +612,13 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     # Only 1 visible reply; the removed one must not be counted
     assert_select "h2", text: /Replies \(1\)/
   end
+
+  test "GET /posts/:id reply cards have anchor ids" do
+    reply_user = User.create!(email: "anc@example.com", name: "Anc",
+                               password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    reply = Reply.create!(post: @post, user: reply_user, body: "anchor me")
+    get post_path(@post)
+    assert_response :success
+    assert_select "div#reply-#{reply.id}"
+  end
 end
