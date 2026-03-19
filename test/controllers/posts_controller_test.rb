@@ -573,4 +573,31 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     get post_path(@post)
     assert_select "a[href=?]", edit_post_reply_path(@post, reply), count: 0
   end
+
+  test "GET /posts/:id Next link is not shown when exactly @take replies exist" do
+    reply_user = User.create!(email: "rp1@example.com", name: "RP1",
+                               password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    20.times { |i| Reply.create!(post: @post, user: reply_user, body: "reply #{i}") }
+    get post_path(@post), params: { take: 20 }
+    assert_response :success
+    assert_select "a", text: /Next/, count: 0
+  end
+
+  test "GET /posts/:id Next link is shown when more replies exist" do
+    reply_user = User.create!(email: "rp2@example.com", name: "RP2",
+                               password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    21.times { |i| Reply.create!(post: @post, user: reply_user, body: "reply #{i}") }
+    get post_path(@post), params: { take: 20 }
+    assert_response :success
+    assert_select "a", text: /Next/
+  end
+
+  test "GET /posts/:id only @take replies are rendered even when probe record is loaded" do
+    reply_user = User.create!(email: "rp3@example.com", name: "RP3",
+                               password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    21.times { |i| Reply.create!(post: @post, user: reply_user, body: "reply #{i}") }
+    get post_path(@post), params: { take: 20 }
+    assert_response :success
+    assert_select ".bg-gray-50.border-gray-200", count: 20
+  end
 end

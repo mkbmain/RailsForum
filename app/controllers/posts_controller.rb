@@ -32,7 +32,7 @@ class PostsController < ApplicationController
     take = (params[:take] || 20).to_i.clamp(1, 100)
     page = [ (params[:page] || 1).to_i, 1 ].max
 
-    @replies      = @post.replies.includes(:user).order(:created_at).limit(take).offset((page - 1) * take)
+    @replies      = @post.replies.visible.includes(:user).order(:created_at).limit(take + 1).offset((page - 1) * take)
     @reply_count  = @post.replies.count
     @take         = take
     @page         = page

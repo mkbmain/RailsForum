@@ -56,7 +56,7 @@
       Replies (<%= @reply_count %>)
     </h2>
 
-    <% @replies.each do |reply| %>
+    <% @replies.first(@take).each do |reply| %>
       <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3">
         <div class="flex items-center gap-2 mb-2">
           <% if reply.user.avatar_url.present? %>
@@ -111,7 +111,7 @@
       <% else %>
         <span></span>
       <% end %>
-      <% if @replies.size >= @take %>
+      <% if @replies.size > @take %>
         <%= link_to "Next →", post_path(@post, page: @page + 1, take: @take),
               class: "text-teal-700 hover:underline font-medium text-sm" %>
       <% end %>
