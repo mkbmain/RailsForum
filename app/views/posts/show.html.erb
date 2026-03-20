@@ -41,7 +41,7 @@
         </p>
       <% end %>
     <% else %>
-      <div class="mt-4 text-gray-800 whitespace-pre-wrap"><%= @post.body %></div>
+      <div class="mt-4 text-gray-800"><%= render_markdown(@post.body) %></div>
       <% if @post.edited? %>
         <p class="text-xs text-gray-400 mt-2 last-edited-at">last edited at <%= @post.last_edited_at.strftime("%-d %b %Y %H:%M") %></p>
       <% end %>

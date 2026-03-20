@@ -22,7 +22,7 @@
       </p>
     <% end %>
   <% else %>
-    <p class="text-gray-800 whitespace-pre-wrap"><%= reply.body %></p>
+    <div class="text-gray-800"><%= render_markdown(reply.body) %></div>
     <% if reply.edited? %>
       <p class="text-xs text-gray-400 mt-1 last-edited-at">last edited at <%= reply.last_edited_at.strftime("%-d %b %Y %H:%M") %></p>
     <% end %>
