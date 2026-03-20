@@ -14,6 +14,7 @@ class RepliesController < ApplicationController
     @reply = @post.replies.build(reply_params.merge(user: current_user))
     if @reply.save
       NotificationService.reply_created(@reply, current_user: current_user)
+      broadcast_reply_created
       redirect_to @post, notice: "Reply posted!"
     else
       @take    = 20
@@ -29,6 +30,7 @@ class RepliesController < ApplicationController
 
   def update
     if @reply.update(reply_params.merge(last_edited_at: Time.current))
+      broadcast_reply_updated
       redirect_to @post, notice: "Reply updated!"
     else
       render :edit, status: :unprocessable_entity
@@ -43,9 +45,11 @@ class RepliesController < ApplicationController
       @reply.update!(removed_at: Time.current, removed_by: current_user)
       @post.update_column(:last_replied_at, @post.replies.visible.maximum(:created_at))
       NotificationService.content_removed(@reply, removed_by: current_user)
+      broadcast_reply_soft_deleted
       redirect_to @post, notice: "Reply removed."
     elsif @reply.user == current_user
       @reply.destroy
+      broadcast_reply_hard_deleted
       redirect_to @post, notice: "Reply deleted."
     else
       redirect_to @post, alert: "Not authorized.", status: :see_other
@@ -81,5 +85,51 @@ class RepliesController < ApplicationController
 
   def ban_redirect_path
     post_path(params[:post_id])
+  end
+
+  def broadcast_reply_created
+    Turbo::StreamsChannel.broadcast_append_to(
+      [ @post, :replies ],
+      target: "replies-list-#{@post.id}",
+      partial: "replies/reply",
+      locals: { reply: @reply, post: @post }
+    )
+    broadcast_reply_count
+  end
+
+  def broadcast_reply_updated
+    Turbo::StreamsChannel.broadcast_replace_to(
+      [ @post, :replies ],
+      target: "reply-#{@reply.id}",
+      partial: "replies/reply",
+      locals: { reply: @reply, post: @post }
+    )
+  end
+
+  def broadcast_reply_soft_deleted
+    Turbo::StreamsChannel.broadcast_replace_to(
+      [ @post, :replies ],
+      target: "reply-#{@reply.id}",
+      partial: "replies/reply",
+      locals: { reply: @reply, post: @post }
+    )
+    broadcast_reply_count
+  end
+
+  def broadcast_reply_hard_deleted
+    Turbo::StreamsChannel.broadcast_remove_to(
+      [ @post, :replies ],
+      target: "reply-#{@reply.id}"
+    )
+    broadcast_reply_count
+  end
+
+  def broadcast_reply_count
+    Turbo::StreamsChannel.broadcast_replace_to(
+      [ @post, :replies ],
+      target: "replies_count_#{@post.id}",
+      partial: "replies/count",
+      locals: { post: @post, count: @post.replies.visible.count }
+    )
   end
 end
