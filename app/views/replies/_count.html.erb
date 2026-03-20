@@ -1,0 +1,4 @@
+<%# app/views/replies/_count.html.erb %>
+<%= turbo_frame_tag "replies_count_#{post.id}" do %>
+  <h2 class="text-xl font-semibold mb-4">Replies (<%= count %>)</h2>
+<% end %>
