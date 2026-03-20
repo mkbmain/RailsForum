@@ -1,6 +1,8 @@
 require "test_helper"
 
 class RepliesControllerTest < ActionDispatch::IntegrationTest
+  include ActionCable::TestHelper
+  include Turbo::Streams::StreamName
   setup do
     Provider.find_or_create_by!(id: 3, name: "internal")
     @user = User.create!(email: "u@example.com", name: "User", password: "pass123",
@@ -310,5 +312,38 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     patch post_reply_path(@post, reply), params: { reply: { body: "Too late" } }
     assert_redirected_to post_path(@post)
     assert_match /no longer be edited/i, flash[:alert]
+  end
+
+  # ---- Turbo Stream broadcasts ----
+
+  test "POST create broadcasts append + count to replies stream" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    assert_broadcasts(stream_name_from([ @post, :replies ]), 2) do
+      post post_replies_path(@post), params: { reply: { body: "live reply" } }
+    end
+  end
+
+  test "PATCH update broadcasts replace to replies stream" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    reply = Reply.create!(post: @post, user: @user, body: "original")
+    assert_broadcasts(stream_name_from([ @post, :replies ]), 1) do
+      patch post_reply_path(@post, reply), params: { reply: { body: "updated" } }
+    end
+  end
+
+  test "DELETE (owner hard-delete) broadcasts remove + count to replies stream" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    reply = Reply.create!(post: @post, user: @user, body: "my reply")
+    assert_broadcasts(stream_name_from([ @post, :replies ]), 2) do
+      delete post_reply_path(@post, reply)
+    end
+  end
+
+  test "DELETE (moderator soft-delete) broadcasts replace + count to replies stream" do
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    reply = Reply.create!(post: @post, user: @user, body: "reply to moderate")
+    assert_broadcasts(stream_name_from([ @post, :replies ]), 2) do
+      delete post_reply_path(@post, reply)
+    end
   end
 end
