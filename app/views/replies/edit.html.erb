@@ -16,6 +16,7 @@
     <div>
       <%= f.label :body, "Reply", class: "block text-sm font-medium text-gray-700" %>
       <%= f.text_area :body, rows: 6, class: "mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" %>
+      <p class="text-xs text-gray-400 mt-1">Markdown supported — <strong>**bold**</strong>, <em>_italic_</em>, <code>`code`</code>, fenced code blocks</p>
     </div>
     <div class="flex gap-3">
       <%= f.submit "Update Reply", class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium" %>
