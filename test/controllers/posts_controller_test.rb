@@ -621,4 +621,22 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "div#reply-#{reply.id}"
   end
+
+  # ---- posts index probe pattern ----
+
+  test "GET /posts does not show Older link when exactly take posts exist" do
+    # setup creates 1 post; create take-1 more to reach exactly take=10 total
+    9.times { |i| Post.create!(user: @user, title: "Extra #{i}", body: "body") }
+    get posts_path, params: { take: 10 }
+    assert_response :success
+    assert_select "a", text: /Older/, count: 0
+  end
+
+  test "GET /posts shows Older link when more than take posts exist" do
+    # setup creates 1 post; create take more to reach take+1=11 total
+    10.times { |i| Post.create!(user: @user, title: "Extra #{i}", body: "body") }
+    get posts_path, params: { take: 10 }
+    assert_response :success
+    assert_select "a", text: /Older/
+  end
 end

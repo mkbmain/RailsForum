@@ -98,4 +98,10 @@ class NotificationTest < ActiveSupport::TestCase
     n.define_singleton_method(:notifiable) { unknown }
     assert_raises(ArgumentError) { n.target_post }
   end
+
+  test "target_post returns nil when notifiable is nil (orphaned record)" do
+    n = Notification.create!(user: @user, actor: @actor, notifiable: @reply, event_type: :reply_to_post)
+    n.define_singleton_method(:notifiable) { nil }
+    assert_nil n.target_post
+  end
 end

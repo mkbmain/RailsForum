@@ -30,7 +30,7 @@
         </div>
       <% else %>
         <div class="space-y-4">
-          <% @posts.each do |post| %>
+          <% @posts.first(@take).each do |post| %>
             <div class="post-card bg-white border border-stone-200 rounded-xl shadow-sm p-5 hover:border-teal-300 hover:shadow-md transition-all">
 
               <%# Top row: category badge + timestamp %>
@@ -88,7 +88,7 @@
           <% else %>
             <span></span>
           <% end %>
-          <% if @posts.size >= @take %>
+          <% if @posts.size > @take %>
             <%= link_to "Older →", posts_path(category: params[:category], take: @take, page: @page + 1),
                   class: "text-teal-700 hover:underline font-medium text-sm" %>
           <% end %>

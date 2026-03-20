@@ -75,4 +75,14 @@ class ReplyTest < ActiveSupport::TestCase
     reply.update_column(:last_edited_at, reply.created_at + 1.second)
     assert reply.reload.edited?
   end
+
+  test "destroying a reply destroys its associated notifications" do
+    actor = User.create!(email: "actor2@example.com", name: "Actor",
+                         password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    reply = Reply.create!(post: @post, user: @user, body: "a reply")
+    Notification.create!(user: @user, actor: actor, notifiable: reply, event_type: :reply_to_post)
+    assert_difference "Notification.count", -1 do
+      reply.destroy
+    end
+  end
 end

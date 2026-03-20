@@ -15,6 +15,7 @@
   <% else %>
     <div class="space-y-2">
       <% @notifications.each do |n| %>
+        <% next if n.target_post.nil? %>
         <% anchor = n.notifiable.is_a?(Reply) ? "reply-#{n.notifiable.id}" : nil %>
         <% post_link = post_path(n.target_post, anchor: anchor) %>
         <div class="bg-white border border-stone-200 rounded-xl p-4 flex items-start gap-3 <%= n.read? ? '' : 'bg-teal-50 border-teal-200' %>">

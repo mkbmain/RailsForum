@@ -18,6 +18,7 @@ class Notification < ApplicationRecord
 
   def target_post
     case notifiable
+    when nil   then nil
     when Post  then notifiable
     when Reply then notifiable.post
     else raise ArgumentError, "Unknown notifiable type for target_post: #{notifiable.class}"

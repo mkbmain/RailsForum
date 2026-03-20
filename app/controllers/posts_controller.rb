@@ -20,7 +20,7 @@ class PostsController < ApplicationController
     take = (params[:take] || 10).to_i.clamp(1, 100)
     page = [ (params[:page] || 1).to_i, 1 ].max
 
-    @posts = posts.limit(take).offset((page - 1) * take)
+    @posts = posts.limit(take + 1).offset((page - 1) * take)
     @take  = take
     @page  = page
   end
