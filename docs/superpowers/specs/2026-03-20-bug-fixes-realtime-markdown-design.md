@@ -22,7 +22,7 @@ This spec covers two correctness bugs and two UX features, sequenced bugs-first 
 
 `Reply` has no `has_many :notifications, as: :notifiable, dependent: :destroy`. When a user hard-deletes their own reply (`RepliesController#destroy`), notification records with `notifiable_type: "Reply", notifiable_id: <id>` remain in the database.
 
-When those notifications are later rendered in `NotificationsController#index`, `Notification#target_post` calls `notifiable.post`. Because the reply record is gone, `belongs_to :notifiable` returns `nil`, and `.post` raises `NoMethodError`, crashing the notifications page for the affected user.
+When those notifications are later rendered in `NotificationsController#index`, `Notification#target_post` is called. Because the reply record is gone, `belongs_to :notifiable` returns `nil`. The `case notifiable` statement in `target_post` falls through the `when Post` and `when Reply` arms and hits `else raise ArgumentError`, crashing the notifications page for the affected user.
 
 ### Fix
 
@@ -32,7 +32,9 @@ When those notifications are later rendered in `NotificationsController#index`, 
 
 **`app/models/notification.rb`**
 - Add a nil guard in `target_post`: if `notifiable` is nil, return `nil` rather than raising
-- In the notifications view, skip rendering notifications where `target_post` returns nil
+
+**`app/views/notifications/index.html.erb`**
+- Wrap each notification row in a guard condition that checks `n.target_post.present?` *before* any local variable assignments that call `target_post` or `post_path`. Specifically, the guard must come before the `anchor` and `post_link` local variable lines — `post_path(nil)` raises `ActionController::UrlGenerationError`, so the nil check cannot be deferred to the render call. Skip rendering the row entirely if `target_post` returns nil.
 
 ### Tests
 
@@ -61,8 +63,8 @@ The probe pattern (load `take + 1`, render `take`, show Next only if `size > tak
 ### Tests
 
 - `test/controllers/posts_controller_test.rb`:
-  - Create exactly `take` posts; assert no "Older →" link in response
-  - Create `take + 1` posts; assert "Older →" link is present
+  - The `setup` block already creates one `@post`. To test exactly `take` total posts on page 1, create `take - 1` additional posts in the test body (not `take`), then assert no "Older →" link in the response.
+  - To test that the Next link appears, create `take` additional posts (for `take + 1` total), then assert "Older →" link is present.
 
 ---
 
@@ -80,14 +82,16 @@ Wrap the reply count display in a Turbo Frame with a stable DOM id (e.g. `replie
 
 ### Broadcasting
 
-In `RepliesController`, after each mutating action, broadcast to the post's reply stream:
+All `RepliesController` success paths redirect rather than render, so all broadcasts on the success path must be explicit server-side broadcasts — not Turbo Stream format responses. Use `Turbo::StreamsChannel.broadcast_*_to` (or the equivalent Active Record model-level `broadcast_*_to` helpers) called directly after the database mutation, before the redirect. (The `update` failure path renders `:edit`, but broadcasts only fire on the success path.)
+
+After each mutating action, broadcast to the post's reply stream:
 
 - **`create`**: `broadcast_append_to` with the new reply partial appended to the replies list; `broadcast_replace_to` targeting the reply count frame
 - **`update`**: `broadcast_replace_to` targeting the updated reply's DOM element with the refreshed reply partial
-- **`destroy` (hard delete by owner)**: `broadcast_remove_to` targeting the reply's DOM element; also update reply count
-- **`destroy` (soft remove by moderator)**: `broadcast_replace_to` with the reply card in its "[removed by moderator]" state; also update reply count
+- **`destroy` (hard delete by owner)**: `broadcast_remove_to` targeting the reply's DOM element; also update the reply count frame
+- **`destroy` (soft remove by moderator)**: `broadcast_replace_to` with the reply card in its "[removed by moderator]" state; also update the reply count frame
 
-All broadcasts use the same reply partial already used for initial render — no new templates needed.
+Replies are currently rendered inline in `app/views/posts/show.html.erb` — there is no `_reply.html.erb` partial. Before wiring broadcasts, extract the reply card markup from the inline loop into a new `app/views/replies/_reply.html.erb` partial. Update the loop in `show.html.erb` to `render partial: "replies/reply", collection: @replies.first(@take), as: :reply`. All broadcasts then reference this new partial.
 
 ### No JavaScript Required
 
@@ -125,9 +129,14 @@ No raw user HTML ever reaches the browser — `no_html: true` strips it at parse
 
 ### Compose Form
 
-Add a single line of hint text below the body textarea in both `posts/_form.html.erb` and the reply form:
+Add a single line of hint text below the body textarea in each of these four locations (no shared form partials exist — all forms are inlined):
 
-> Markdown supported — `**bold**`, `_italic_`, `` `code` ``, fenced code blocks
+- `app/views/posts/new.html.erb` — new post form
+- `app/views/posts/edit.html.erb` — edit post form
+- `app/views/posts/show.html.erb` — inline reply compose form
+- `app/views/replies/edit.html.erb` — edit reply form
+
+Hint text: `Markdown supported — **bold**, _italic_, \`code\`, fenced code blocks`
 
 No live preview. Can be added later if requested.
 
@@ -139,6 +148,7 @@ Unit tests in `test/helpers/application_helper_test.rb`:
 - Autolinks produce `<a>` tags
 - Raw `<script>` tags are stripped from output
 - Raw `<img>` tags are stripped from output
+- `strip_tags("**bold**")` returns `"**bold**"` (markdown syntax characters survive `strip_tags` as literal text, confirming the index preview does not mangle markdown bodies)
 
 ---
 
