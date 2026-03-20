@@ -56,56 +56,9 @@
       Replies (<%= @reply_count %>)
     </h2>
 
-    <% @replies.first(@take).each do |reply| %>
-      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-3" id="reply-<%= reply.id %>">
-        <div class="flex items-center gap-2 mb-2">
-          <% if reply.user.avatar_url.present? %>
-            <%= image_tag reply.user.avatar_url, class: "w-6 h-6 rounded-full", alt: "" %>
-          <% else %>
-            <span class="w-6 h-6 rounded-full bg-teal-100 text-teal-700 font-semibold flex items-center justify-center text-xs">
-              <%= (reply.user.name.presence || "?").first.upcase %>
-            </span>
-          <% end %>
-          <span class="text-sm font-medium text-gray-700"><%= reply.user.name %></span>
-          <span class="text-xs text-gray-400"><%= time_ago_in_words(reply.created_at) %> ago</span>
-          <% if logged_in? && current_user == reply.user && Time.current - reply.created_at <= EDIT_WINDOW_SECONDS %>
-            <%= link_to "Edit", edit_post_reply_path(@post, reply), class: "text-xs text-blue-500 hover:underline ml-auto" %>
-          <% end %>
-        </div>
-        <% if reply.removed? %>
-          <p class="text-gray-400 italic">[removed by moderator]</p>
-          <% if logged_in? && current_user.moderator? %>
-            <p class="text-xs text-gray-400 mt-1">
-              Removed by <%= reply.removed_by.name %> on <%= reply.removed_at.strftime("%B %-d, %Y") %>
-            </p>
-          <% end %>
-        <% else %>
-          <p class="text-gray-800 whitespace-pre-wrap"><%= reply.body %></p>
-          <% if reply.edited? %>
-            <p class="text-xs text-gray-400 mt-1 last-edited-at">last edited at <%= reply.last_edited_at.strftime("%-d %b %Y %H:%M") %></p>
-          <% end %>
-          <%= turbo_frame_tag reactions_frame_id(reply) do %>
-            <%= render "reactions/reactions", reactionable: reply %>
-          <% end %>
-        <% end %>
-        <div class="flex items-center justify-between mt-2">
-          <span></span>
-          <div class="flex gap-3">
-            <% if logged_in? && reply.user == current_user && !reply.removed? %>
-              <%= button_to "Delete", post_reply_path(@post, reply), method: :delete,
-                    class: "text-xs text-gray-400 hover:text-red-500 bg-transparent border-0 p-0 cursor-pointer" %>
-            <% end %>
-            <% if logged_in? && can_moderate?(reply.user) && !reply.removed? %>
-              <%= button_to "Remove", post_reply_path(@post, reply), method: :delete,
-                    class: "text-xs text-red-600 hover:underline bg-transparent border-0 p-0 cursor-pointer",
-                    data: { confirm: "Remove this reply?" } %>
-              <%= link_to "Ban User", new_user_ban_path(user_id: reply.user_id),
-                    class: "text-xs text-orange-600 hover:underline" %>
-            <% end %>
-          </div>
-        </div>
-      </div>
-    <% end %>
+    <div id="replies-list-<%= @post.id %>">
+      <%= render partial: "replies/reply", collection: @replies.first(@take), as: :reply, locals: { post: @post } %>
+    </div>
 
     <div class="flex justify-between mt-4 mb-6">
       <% if @page > 1 %>
