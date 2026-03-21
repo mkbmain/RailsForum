@@ -48,11 +48,17 @@ class Admin::UsersController < Admin::BaseController
       @items    = items.first(TAB_PER_PAGE)
     when "activity"
       @bans_issued     = UserBan.where(banned_by: @user).includes(:user, :ban_reason)
-                                .order(banned_from: :desc).limit(TAB_PER_PAGE)
+                                .order(banned_from: :desc)
+                                .limit(TAB_PER_PAGE).offset((page - 1) * TAB_PER_PAGE)
       @posts_removed   = Post.where(removed_by: @user).includes(:user)
-                             .order(removed_at: :desc).limit(TAB_PER_PAGE)
+                             .order(removed_at: :desc)
+                             .limit(TAB_PER_PAGE).offset((page - 1) * TAB_PER_PAGE)
       @replies_removed = Reply.where(removed_by: @user).includes(:user, :post)
-                              .order(removed_at: :desc).limit(TAB_PER_PAGE)
+                              .order(removed_at: :desc)
+                              .limit(TAB_PER_PAGE).offset((page - 1) * TAB_PER_PAGE)
+      @has_more = @bans_issued.size == TAB_PER_PAGE ||
+                  @posts_removed.size == TAB_PER_PAGE ||
+                  @replies_removed.size == TAB_PER_PAGE
     end
 
     @page = page

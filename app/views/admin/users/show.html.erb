@@ -214,8 +214,8 @@
   <% end %>
 </div>
 
-<%# Pagination (posts, replies, bans tabs only) %>
-<% if %w[posts replies bans].include?(@tab) %>
+<%# Pagination %>
+<% if %w[posts replies bans activity].include?(@tab) %>
   <div class="flex justify-between items-center mt-4 text-sm text-gray-600">
     <% if @page > 1 %>
       <%= link_to "← Previous", admin_user_path(@user, tab: @tab, page: @page - 1),
