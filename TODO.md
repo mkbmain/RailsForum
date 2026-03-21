@@ -8,12 +8,6 @@
   `.includes(:actor, :notifiable)` preloads the Reply/Post notifiable but `Notification#target_post` then calls `notifiable.post` for Reply-type notifications — one extra SQL query per reply notification.
   Fix: use `.includes(:actor, notifiable: :post)` with a polymorphic strategy.
 
-- [ ] **Wrong reply count on create error** (`replies_controller.rb:23`)
-  Uses `@post.replies.count` (includes soft-deleted) instead of `@post.replies.visible.count`. Shows an inflated count when rendering the error state after a failed reply.
-
-- [ ] **Notification empty-state breaks when all notifiables are deleted** (`notifications/index.html.erb:11`)
-  `@notifications.empty?` check happens before per-row `next if n.target_post.nil?` skips. A user whose notifications all point to hard-deleted replies sees a blank list instead of "No notifications yet."
-
 ### Low — Polish
 
 - [ ] **Missing case-insensitive index on `users.name`** (`notification_service.rb:50`)

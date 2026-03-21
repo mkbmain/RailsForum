@@ -19,8 +19,8 @@ class RepliesController < ApplicationController
     else
       @take    = 20
       @page    = 1
-      @replies = @post.replies.includes(:user).order(:created_at).limit(@take).offset(0)
-      @reply_count = @post.replies.count
+      @replies = @post.replies.visible.includes(:user).order(:created_at).limit(@take).offset(0)
+      @reply_count = @post.replies.visible.count
       render "posts/show", status: :unprocessable_entity
     end
   end
