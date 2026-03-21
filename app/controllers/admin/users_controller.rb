@@ -47,18 +47,21 @@ class Admin::UsersController < Admin::BaseController
       @has_more = items.size > TAB_PER_PAGE
       @items    = items.first(TAB_PER_PAGE)
     when "activity"
-      @bans_issued     = UserBan.where(banned_by: @user).includes(:user, :ban_reason)
+      bans_raw         = UserBan.where(banned_by: @user).includes(:user, :ban_reason)
                                 .order(banned_from: :desc)
-                                .limit(TAB_PER_PAGE).offset((page - 1) * TAB_PER_PAGE)
-      @posts_removed   = Post.where(removed_by: @user).includes(:user)
+                                .limit(TAB_PER_PAGE + 1).offset((page - 1) * TAB_PER_PAGE).to_a
+      posts_raw        = Post.where(removed_by: @user).includes(:user)
                              .order(removed_at: :desc)
-                             .limit(TAB_PER_PAGE).offset((page - 1) * TAB_PER_PAGE)
-      @replies_removed = Reply.where(removed_by: @user).includes(:user, :post)
+                             .limit(TAB_PER_PAGE + 1).offset((page - 1) * TAB_PER_PAGE).to_a
+      replies_raw      = Reply.where(removed_by: @user).includes(:user, :post)
                               .order(removed_at: :desc)
-                              .limit(TAB_PER_PAGE).offset((page - 1) * TAB_PER_PAGE)
-      @has_more = @bans_issued.size == TAB_PER_PAGE ||
-                  @posts_removed.size == TAB_PER_PAGE ||
-                  @replies_removed.size == TAB_PER_PAGE
+                              .limit(TAB_PER_PAGE + 1).offset((page - 1) * TAB_PER_PAGE).to_a
+      @has_more        = bans_raw.size > TAB_PER_PAGE ||
+                         posts_raw.size > TAB_PER_PAGE ||
+                         replies_raw.size > TAB_PER_PAGE
+      @bans_issued     = bans_raw.first(TAB_PER_PAGE)
+      @posts_removed   = posts_raw.first(TAB_PER_PAGE)
+      @replies_removed = replies_raw.first(TAB_PER_PAGE)
     end
 
     @page = page

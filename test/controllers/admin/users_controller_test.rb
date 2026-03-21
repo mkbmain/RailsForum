@@ -122,4 +122,16 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_no_match "Moderation Activity", response.body
   end
+
+  test "GET /admin/users/:id sub_admin can view user detail" do
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    get admin_user_path(@creator)
+    assert_response :success
+  end
+
+  test "GET /admin/users/:id creator cannot access admin panel" do
+    post login_path, params: { email: "creator@example.com", password: "pass123" }
+    get admin_user_path(@admin)
+    assert_redirected_to root_path
+  end
 end
