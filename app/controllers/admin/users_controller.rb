@@ -2,6 +2,8 @@ class Admin::UsersController < Admin::BaseController
   PER_PAGE     = 20
   TAB_PER_PAGE = 30
 
+  before_action :require_admin, only: [ :promote, :demote ]
+
   def index
     scope = User.includes(:roles, :user_bans)
     if params[:q].present?
@@ -68,10 +70,26 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def promote
-    redirect_to admin_root_path
+    user = User.find(params[:id])
+    if user == current_user || user.admin?
+      redirect_to admin_user_path(user), alert: "You cannot change this user's role." and return
+    end
+    if user.sub_admin?
+      redirect_to admin_user_path(user), alert: "User is already a Sub-admin." and return
+    end
+    user.roles << Role.find_by!(name: Role::SUB_ADMIN)
+    redirect_to admin_user_path(user), notice: "#{user.name} has been promoted to Sub-admin."
   end
 
   def demote
-    redirect_to admin_root_path
+    user = User.find(params[:id])
+    if user == current_user || user.admin?
+      redirect_to admin_user_path(user), alert: "You cannot change this user's role." and return
+    end
+    unless user.sub_admin?
+      redirect_to admin_user_path(user), alert: "User is already a Creator." and return
+    end
+    UserRole.where(user: user, role: Role.find_by!(name: Role::SUB_ADMIN)).destroy_all
+    redirect_to admin_user_path(user), notice: "#{user.name} has been demoted to Creator."
   end
 end

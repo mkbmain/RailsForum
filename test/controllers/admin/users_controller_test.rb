@@ -134,4 +134,61 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     get admin_user_path(@admin)
     assert_redirected_to root_path
   end
+
+  test "PATCH promote grants sub_admin role to creator" do
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    assert_not @creator.sub_admin?
+    patch promote_admin_user_path(@creator)
+    assert_redirected_to admin_user_path(@creator)
+    assert @creator.reload.sub_admin?
+    assert_match /promoted/i, flash[:notice]
+  end
+
+  test "PATCH demote removes sub_admin role" do
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    assert @sub_admin.sub_admin?
+    patch demote_admin_user_path(@sub_admin)
+    assert_redirected_to admin_user_path(@sub_admin)
+    assert_not @sub_admin.reload.sub_admin?
+    assert_match /demoted/i, flash[:notice]
+  end
+
+  test "PATCH promote is forbidden for sub_admin actor" do
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    patch promote_admin_user_path(@creator)
+    assert_redirected_to root_path
+    assert_not @creator.reload.sub_admin?
+  end
+
+  test "PATCH promote on self redirects with alert" do
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    patch promote_admin_user_path(@admin)
+    assert_redirected_to admin_user_path(@admin)
+    assert_match /cannot/i, flash[:alert]
+  end
+
+  test "PATCH promote on another admin redirects with alert" do
+    other = User.create!(email: "a2@example.com", name: "Other Admin",
+                         password: "pass123", password_confirmation: "pass123",
+                         provider_id: 3)
+    other.roles << Role.find_by!(name: Role::ADMIN)
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    patch promote_admin_user_path(other)
+    assert_redirected_to admin_user_path(other)
+    assert_match /cannot/i, flash[:alert]
+  end
+
+  test "PATCH promote is idempotent when user is already sub_admin" do
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    patch promote_admin_user_path(@sub_admin)
+    assert_redirected_to admin_user_path(@sub_admin)
+    assert_match /already/i, flash[:alert]
+  end
+
+  test "PATCH demote is idempotent when user is already creator" do
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    patch demote_admin_user_path(@creator)
+    assert_redirected_to admin_user_path(@creator)
+    assert_match /already/i, flash[:alert]
+  end
 end
