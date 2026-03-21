@@ -67,6 +67,73 @@ CREATE TABLE public.categories (
 
 
 --
+-- Name: content_types; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.content_types (
+    id integer NOT NULL,
+    name character varying(50) NOT NULL
+);
+
+
+--
+-- Name: content_types_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.content_types_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: content_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.content_types_id_seq OWNED BY public.content_types.id;
+
+
+--
+-- Name: flags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.flags (
+    id integer NOT NULL,
+    user_id bigint NOT NULL,
+    content_type_id smallint NOT NULL,
+    flaggable_id bigint NOT NULL,
+    reason smallint NOT NULL,
+    resolved_at timestamp(6) without time zone,
+    resolved_by_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: flags_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.flags_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: flags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.flags_id_seq OWNED BY public.flags.id;
+
+
+--
 -- Name: notifications; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -355,6 +422,20 @@ ALTER TABLE ONLY public.ban_reasons ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
+-- Name: content_types id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.content_types ALTER COLUMN id SET DEFAULT nextval('public.content_types_id_seq'::regclass);
+
+
+--
+-- Name: flags id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.flags ALTER COLUMN id SET DEFAULT nextval('public.flags_id_seq'::regclass);
+
+
+--
 -- Name: notifications id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -433,6 +514,22 @@ ALTER TABLE ONLY public.categories
 
 ALTER TABLE ONLY public.categories
     ADD CONSTRAINT categories_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: content_types content_types_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.content_types
+    ADD CONSTRAINT content_types_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: flags flags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.flags
+    ADD CONSTRAINT flags_pkey PRIMARY KEY (id);
 
 
 --
@@ -520,6 +617,27 @@ ALTER TABLE ONLY public.users
 --
 
 CREATE UNIQUE INDEX index_ban_reasons_on_name ON public.ban_reasons USING btree (name);
+
+
+--
+-- Name: index_flags_on_content_type_and_flaggable; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_flags_on_content_type_and_flaggable ON public.flags USING btree (content_type_id, flaggable_id);
+
+
+--
+-- Name: index_flags_on_user_content_flaggable; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_flags_on_user_content_flaggable ON public.flags USING btree (user_id, content_type_id, flaggable_id);
+
+
+--
+-- Name: index_flags_pending_by_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_flags_pending_by_created_at ON public.flags USING btree (created_at) WHERE (resolved_at IS NULL);
 
 
 --
@@ -691,6 +809,14 @@ CREATE UNIQUE INDEX index_users_on_provider_id_and_uid ON public.users USING btr
 
 
 --
+-- Name: flags fk_rails_05feec802b; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.flags
+    ADD CONSTRAINT fk_rails_05feec802b FOREIGN KEY (content_type_id) REFERENCES public.content_types(id);
+
+
+--
 -- Name: notifications fk_rails_06a39bb8cc; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -795,6 +921,22 @@ ALTER TABLE ONLY public.user_bans
 
 
 --
+-- Name: flags fk_rails_d2e998acee; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.flags
+    ADD CONSTRAINT fk_rails_d2e998acee FOREIGN KEY (resolved_by_id) REFERENCES public.users(id);
+
+
+--
+-- Name: flags fk_rails_d7842de637; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.flags
+    ADD CONSTRAINT fk_rails_d7842de637 FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: replies fk_rails_e64bb1a837; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -817,6 +959,7 @@ ALTER TABLE ONLY public.user_bans
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260321021906'),
 ('20260321014337'),
 ('20260319160355'),
 ('20260317135601'),
