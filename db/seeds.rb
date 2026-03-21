@@ -14,6 +14,10 @@ Provider.find_or_create_by!(id: 3) { |p| p.name = "internal" }
 
 puts "Seeded #{Provider.count} providers"
 
+ContentType.find_or_create_by!(id: 1) { |ct| ct.name = "Post" }
+ContentType.find_or_create_by!(id: 2) { |ct| ct.name = "Reply" }
+puts "Seeded #{ContentType.count} content types"
+
 [ "Spam", "Harassment", "Against Guidelines", "Other" ].each do |name|
   BanReason.find_or_create_by!(name: name)
 end
