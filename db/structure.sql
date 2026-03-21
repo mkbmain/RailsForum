@@ -565,10 +565,31 @@ CREATE INDEX index_posts_on_category_id ON public.posts USING btree (category_id
 
 
 --
+-- Name: index_posts_on_last_replied_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_posts_on_last_replied_at ON public.posts USING btree (last_replied_at);
+
+
+--
+-- Name: index_posts_on_removed_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_posts_on_removed_at ON public.posts USING btree (removed_at) WHERE (removed_at IS NULL);
+
+
+--
 -- Name: index_posts_on_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX index_posts_on_user_id ON public.posts USING btree (user_id);
+
+
+--
+-- Name: index_posts_on_user_id_and_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_posts_on_user_id_and_created_at ON public.posts USING btree (user_id, created_at);
 
 
 --
@@ -600,10 +621,24 @@ CREATE INDEX index_replies_on_post_id ON public.replies USING btree (post_id);
 
 
 --
+-- Name: index_replies_on_removed_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_replies_on_removed_at ON public.replies USING btree (removed_at) WHERE (removed_at IS NULL);
+
+
+--
 -- Name: index_replies_on_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX index_replies_on_user_id ON public.replies USING btree (user_id);
+
+
+--
+-- Name: index_replies_on_user_id_and_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_replies_on_user_id_and_created_at ON public.replies USING btree (user_id, created_at);
 
 
 --
@@ -782,6 +817,7 @@ ALTER TABLE ONLY public.user_bans
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260321014337'),
 ('20260319160355'),
 ('20260317135601'),
 ('20260317135600'),
