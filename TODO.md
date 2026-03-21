@@ -2,12 +2,6 @@
 
 ## Confirmed Bugs
 
-### High — Fix Soon
-
-- [ ] **N+1 query in notifications** (`notifications_controller.rb:6`)
-  `.includes(:actor, :notifiable)` preloads the Reply/Post notifiable but `Notification#target_post` then calls `notifiable.post` for Reply-type notifications — one extra SQL query per reply notification.
-  Fix: use `.includes(:actor, notifiable: :post)` with a polymorphic strategy.
-
 ### Low — Polish
 
 - [ ] **Missing case-insensitive index on `users.name`** (`notification_service.rb:50`)
