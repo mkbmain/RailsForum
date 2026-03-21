@@ -23,7 +23,7 @@ admin > sub_admin > creator
 
 | Controller | Base | Purpose |
 |---|---|---|
-| `Admin::BaseController` | `ApplicationController` | Auth gate (requires moderator). Exposes `require_admin` for role actions. |
+| `Admin::BaseController` | `ApplicationController` | Auth gate (requires moderator). |
 | `Admin::DashboardController` | `Admin::BaseController` | Stats cards + recent activity feed. |
 | `Admin::UsersController` | `Admin::BaseController` | User list, user detail, promote, demote. |
 
@@ -45,6 +45,13 @@ namespace :admin do
 end
 ```
 
+### Existing Auth Methods
+
+Both `require_moderator` and `require_admin` already exist in `app/controllers/concerns/moderatable.rb` and are included via `ApplicationController`. `Admin::BaseController` inherits these — no new methods needed.
+
+- `require_moderator` — passes for any user where `moderator?` is true, which means sub_admin or admin. Redirects creators and guests to root.
+- `require_admin` — passes only for admins. Redirects sub-admins and below to root.
+
 ### No New Models
 
 All data comes from existing models: `User`, `Post`, `Reply`, `UserBan`, `UserRole`, `Role`, `BanReason`.
@@ -59,12 +66,17 @@ All data comes from existing models: `User`, `Post`, `Reply`, `UserBan`, `UserRo
 - Total replies (including removed)
 - Currently banned users (active bans: `banned_until >= Time.current`)
 
-**Recent activity feed** (~20 most recent moderation actions, combined and sorted by time):
-- Bans issued: "X banned Y for Z hours (reason)"
-- Posts removed: "X removed post: [title]"
-- Replies removed: "X removed reply on: [post title]"
+**Recent activity feed** — 20 most recent moderation actions system-wide, capped at 20 (no pagination). No feed items means "No recent moderation activity." Combined from three sources via union query and sorted by event time descending:
 
-Each feed item links to the relevant user or content in the admin panel.
+| Source | Event time | Display |
+|---|---|---|
+| `user_bans` (all) | `banned_from` | "X banned Y for Z hours (reason)" — duration derived from `banned_until - banned_from`, rounded to hours; reason displayed as `ban_reason.name` |
+| `posts` where `removed_at IS NOT NULL` | `removed_at` | "X removed post: [title]" |
+| `replies` where `removed_at IS NOT NULL` | `removed_at` | "X removed reply on: [post title]" |
+
+Each feed item links to the admin detail page of the actor who performed the action: `banned_by` for bans, `removed_by` for post/reply removals.
+
+The existing `BansController` sets minimum 1 hour, so no permanent bans exist.
 
 ### Users List (`GET /admin/users`)
 
@@ -73,33 +85,32 @@ Each feed item links to the relevant user or content in the admin panel.
 - Email
 - Role badge (colour-coded: Admin / Sub-admin / Creator)
 - Joined date
-- Post count (visible posts only)
-- Ban status (active ban indicator + expiry time if currently banned)
+- Post count (all posts, including removed)
+- Ban status: "Banned until [datetime]" if active ban; blank otherwise
 
 **Controls:**
-- Search input: filters by name or email (server-side)
+- Search: case-insensitive name or email match (`ILIKE`), ignores leading/trailing whitespace
 - Pagination: 20 per page
 
 ### User Detail (`GET /admin/users/:id`)
 
-**Header:** Avatar, name, email, role badge, join date.
+**Header:** Avatar, name, email, role badge, join date. If the user has an active ban (`banned_until >= Time.current`), display "Banned until [datetime]" in the header.
 
-**Role controls** (admin only, not shown to sub-admins):
+**Role controls** — rendered via `if current_user.admin?` in the view (not a separate `before_action` on `show`). When visible:
 - User is a creator → "Promote to Sub-admin" button
 - User is a sub-admin → "Demote to Creator" button
-- User is the viewing admin themselves → no controls
-- User is another admin → no controls
+- User is the viewing admin themselves → no controls shown
+- User is another admin → no controls shown
 - Promoting to admin or demoting from admin is not available in the UI
 
-**Tabs:**
+Role changes: permission guards (self-modification, admin target) are checked first, redirecting to `admin_user_path` with an **alert** on failure. If the target already has the intended role after guards pass (concurrent action), treat as a no-op and redirect to `admin_user_path` with an **alert** ("User already has that role"). On success, redirect to `admin_user_path` with a **notice** confirming the role change.
 
-1. **Posts** — all posts including removed. Removed posts show a "Removed" badge (greyed out) with remover name and timestamp. Each visible post links to the live post.
-2. **Replies** — all replies including removed. Same removed treatment as posts. Shows parent post title as context.
-3. **Bans received** — full ban history for this user: reason, duration, who issued it, when.
-4. **Moderation activity** — only visible if the viewed user is a sub-admin or admin. Three sub-sections:
-   - Bans they have issued
-   - Posts they have removed
-   - Replies they have removed
+**Tabs** — default tab is Posts. Each tab is independently paginated at 30 per page using separate query params (`posts_page`, `replies_page`, `bans_page`, `activity_page`):
+
+1. **Posts** — all posts including removed. Removed posts show a "Removed" badge (greyed out) with remover name and timestamp. Each visible post links to the live post. Empty state: "No posts."
+2. **Replies** — all replies including removed. Same removed treatment as posts. Shows parent post title as context. Empty state: "No replies."
+3. **Bans received** — full ban history: reason, duration (derived from `banned_until - banned_from`), who issued it, when. Empty state: "No bans."
+4. **Moderation activity** — shown if the viewed user has ever issued a ban or removed any content (regardless of their current role). Both sub-admins and admins can view this tab on any user's detail page. Three sub-sections: bans issued, posts removed, replies removed. Empty state per sub-section: "None."
 
 ## Permissions Summary
 
@@ -109,13 +120,15 @@ Each feed item links to the relevant user or content in the admin panel.
 | View dashboard | No | Yes | Yes |
 | View users list | No | Yes | Yes |
 | View user detail (all content + bans) | No | Yes | Yes |
-| Promote creator → sub-admin | No | No | Yes |
-| Demote sub-admin → creator | No | No | Yes |
+| View moderation activity tab (any user's profile) | No | Yes | Yes |
+| Promote creator → sub-admin | No | No | Yes (not on own profile or another admin) |
+| Demote sub-admin → creator | No | No | Yes (not on own profile or another admin) |
 | Promote/demote admin roles | No | No | No (manual only) |
 
 ## Permission Enforcement
 
-- `Admin::BaseController#before_action` calls `require_moderator` (existing concern method).
-- `promote` and `demote` actions additionally call `require_admin`.
-- Same-level protection: admin cannot modify another admin's role. Checked in the controller before applying the change.
-- Role changes use `UserRole` join records directly (add or remove).
+- `Admin::BaseController` runs `before_action :require_login, :require_moderator` — redirects any non-moderator to root.
+- `promote` and `demote` actions additionally run `before_action :require_admin`.
+- Before applying any role change: check self-modification (redirect with alert if `params[:id]` == `current_user.id`), then check admin target (redirect with alert if target user is an admin).
+- Role changes use `UserRole` join records directly: promote adds the `sub_admin` role record; demote removes it. The `creator` role record is never touched.
+- Demoting the last remaining sub-admin or moderator is not guarded against — considered out of scope.
