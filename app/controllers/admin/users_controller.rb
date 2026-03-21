@@ -20,6 +20,42 @@ class Admin::UsersController < Admin::BaseController
   end
 
   def show
+    @user       = User.includes(:roles).find(params[:id])
+    @tab        = params[:tab].presence_in(%w[posts replies bans activity]) || "posts"
+    @active_ban = @user.user_bans.where("banned_until >= ?", Time.current)
+                       .order(banned_until: :desc).first
+    @has_moderation_history = UserBan.where(banned_by: @user).exists? ||
+                              Post.where(removed_by: @user).exists? ||
+                              Reply.where(removed_by: @user).exists?
+
+    page = [ (params[:page] || 1).to_i, 1 ].max
+
+    case @tab
+    when "posts"
+      scope     = @user.posts.includes(:removed_by).order(created_at: :desc)
+      items     = scope.limit(TAB_PER_PAGE + 1).offset((page - 1) * TAB_PER_PAGE).to_a
+      @has_more = items.size > TAB_PER_PAGE
+      @items    = items.first(TAB_PER_PAGE)
+    when "replies"
+      scope     = @user.replies.includes(:post, :removed_by).order(created_at: :desc)
+      items     = scope.limit(TAB_PER_PAGE + 1).offset((page - 1) * TAB_PER_PAGE).to_a
+      @has_more = items.size > TAB_PER_PAGE
+      @items    = items.first(TAB_PER_PAGE)
+    when "bans"
+      scope     = @user.user_bans.includes(:ban_reason, :banned_by).order(banned_from: :desc)
+      items     = scope.limit(TAB_PER_PAGE + 1).offset((page - 1) * TAB_PER_PAGE).to_a
+      @has_more = items.size > TAB_PER_PAGE
+      @items    = items.first(TAB_PER_PAGE)
+    when "activity"
+      @bans_issued     = UserBan.where(banned_by: @user).includes(:user, :ban_reason)
+                                .order(banned_from: :desc).limit(TAB_PER_PAGE)
+      @posts_removed   = Post.where(removed_by: @user).includes(:user)
+                             .order(removed_at: :desc).limit(TAB_PER_PAGE)
+      @replies_removed = Reply.where(removed_by: @user).includes(:user, :post)
+                              .order(removed_at: :desc).limit(TAB_PER_PAGE)
+    end
+
+    @page = page
   end
 
   def promote

@@ -45,4 +45,81 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_match "Bob Sub", response.body
     assert_no_match "Alice Creator", response.body
   end
+
+  test "GET /admin/users/:id shows user header with email and role" do
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    get admin_user_path(@creator)
+    assert_response :success
+    assert_match "Alice Creator", response.body
+    assert_match "creator@example.com", response.body
+    assert_match "Creator", response.body
+  end
+
+  test "GET /admin/users/:id shows active ban in header" do
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    BanReason.find_or_create_by!(name: "Spam")
+    ban_reason = BanReason.find_by!(name: "Spam")
+    UserBan.create!(user: @creator, ban_reason: ban_reason, banned_by: @admin,
+                    banned_from: Time.current, banned_until: 5.hours.from_now)
+    get admin_user_path(@creator)
+    assert_response :success
+    assert_match "Banned until", response.body
+  end
+
+  test "GET /admin/users/:id posts tab shows all posts including removed" do
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    category = Category.find_or_create_by!(id: 2, name: "General")
+    @creator.posts.create!(title: "Live Post", body: "body text here ok", category: category)
+    removed = @creator.posts.create!(title: "Gone Post", body: "body text here ok", category: category)
+    removed.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+    get admin_user_path(@creator), params: { tab: "posts" }
+    assert_response :success
+    assert_match "Live Post", response.body
+    assert_match "Gone Post", response.body
+    assert_match "Removed", response.body
+  end
+
+  test "GET /admin/users/:id replies tab shows all replies including removed" do
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    category = Category.find_or_create_by!(id: 2, name: "General")
+    parent = @admin.posts.create!(title: "Parent Post", body: "body text here ok", category: category)
+    parent.replies.create!(body: "live reply body ok", user: @creator)
+    removed = parent.replies.create!(body: "removed reply body ok", user: @creator)
+    removed.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+    get admin_user_path(@creator), params: { tab: "replies" }
+    assert_response :success
+    assert_match "live reply body ok", response.body
+    assert_match "removed reply body ok", response.body
+    assert_match "Parent Post", response.body
+  end
+
+  test "GET /admin/users/:id bans tab shows ban history" do
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    BanReason.find_or_create_by!(name: "Spam")
+    ban_reason = BanReason.find_by!(name: "Spam")
+    UserBan.create!(user: @creator, ban_reason: ban_reason, banned_by: @admin,
+                    banned_from: Time.current, banned_until: 3.hours.from_now)
+    get admin_user_path(@creator), params: { tab: "bans" }
+    assert_response :success
+    assert_match "Spam", response.body
+    assert_match "Carol Admin", response.body
+  end
+
+  test "GET /admin/users/:id activity tab shows bans issued by a moderator" do
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    BanReason.find_or_create_by!(name: "Spam")
+    ban_reason = BanReason.find_by!(name: "Spam")
+    UserBan.create!(user: @creator, ban_reason: ban_reason, banned_by: @sub_admin,
+                    banned_from: Time.current, banned_until: 3.hours.from_now)
+    get admin_user_path(@sub_admin), params: { tab: "activity" }
+    assert_response :success
+    assert_match "Alice Creator", response.body
+  end
+
+  test "GET /admin/users/:id does not show activity tab for user with no moderation history" do
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    get admin_user_path(@creator)
+    assert_response :success
+    assert_no_match "Moderation Activity", response.body
+  end
 end
