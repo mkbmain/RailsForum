@@ -160,6 +160,13 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_not @creator.reload.sub_admin?
   end
 
+  test "PATCH demote is forbidden for sub_admin actor" do
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    patch demote_admin_user_path(@sub_admin)
+    assert_redirected_to root_path
+    assert @sub_admin.reload.sub_admin?
+  end
+
   test "PATCH promote on self redirects with alert" do
     post login_path, params: { email: "admin@example.com", password: "pass123" }
     patch promote_admin_user_path(@admin)

@@ -2,6 +2,8 @@ class Admin::UsersController < Admin::BaseController
   PER_PAGE     = 20
   TAB_PER_PAGE = 30
 
+  # BaseController already requires :require_moderator (allows sub-admins).
+  # Promote/demote additionally require full admin.
   before_action :require_admin, only: [ :promote, :demote ]
 
   def index
@@ -77,7 +79,7 @@ class Admin::UsersController < Admin::BaseController
     if user.sub_admin?
       redirect_to admin_user_path(user), alert: "User is already a Sub-admin." and return
     end
-    user.roles << Role.find_by!(name: Role::SUB_ADMIN)
+    UserRole.find_or_create_by!(user: user, role: Role.find_by!(name: Role::SUB_ADMIN))
     redirect_to admin_user_path(user), notice: "#{user.name} has been promoted to Sub-admin."
   end
 
