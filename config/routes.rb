@@ -26,6 +26,16 @@ Rails.application.routes.draw do
     resources :bans, only: [ :new, :create ]
   end
 
+  namespace :admin do
+    root to: "dashboard#index"
+    resources :users, only: [:index, :show] do
+      member do
+        patch :promote
+        patch :demote
+      end
+    end
+  end
+
   resources :notifications, only: [ :index ] do
     collection { patch :read_all }
     member     { patch :read }
