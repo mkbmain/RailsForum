@@ -1,1 +1,70 @@
-<p>Admin Dashboard</p>
+<% content_for :title, "Dashboard – Admin Panel" %>
+
+<h1 class="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-5">
+    <div class="text-sm text-gray-500 font-medium">Total Users</div>
+    <div class="text-3xl font-bold text-gray-900 mt-1"><%= @total_users %></div>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-5">
+    <div class="text-sm text-gray-500 font-medium">Total Posts</div>
+    <div class="text-3xl font-bold text-gray-900 mt-1"><%= @total_posts %></div>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-5">
+    <div class="text-sm text-gray-500 font-medium">Total Replies</div>
+    <div class="text-3xl font-bold text-gray-900 mt-1"><%= @total_replies %></div>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-5">
+    <div class="text-sm text-gray-500 font-medium">Currently Banned</div>
+    <div class="text-3xl font-bold text-red-600 mt-1"><%= @banned_users %></div>
+  </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-stone-200">
+  <div class="px-5 py-4 border-b border-stone-200">
+    <h2 class="text-base font-semibold text-gray-900">Recent Moderation Activity</h2>
+  </div>
+  <% if @activity.empty? %>
+    <p class="px-5 py-6 text-sm text-gray-500">No recent moderation activity.</p>
+  <% else %>
+    <ul class="divide-y divide-stone-100">
+      <% @activity.each do |item| %>
+        <li class="px-5 py-3 text-sm flex items-center justify-between gap-4">
+          <span>
+            <% case item[:type] %>
+            <% when :ban %>
+              <% ban = item[:record] %>
+              <% hours = ((ban.banned_until - ban.banned_from) / 3600).round %>
+              <% if ban.banned_by %>
+                <%= link_to ban.banned_by.name, admin_user_path(ban.banned_by), class: "font-medium text-teal-700 hover:underline" %>
+              <% else %>
+                <span class="font-medium">Unknown</span>
+              <% end %>
+              banned <span class="font-medium"><%= ban.user.name %></span>
+              for <%= hours %> hour<%= hours == 1 ? "" : "s" %>
+              (<%= ban.ban_reason.name %>)
+            <% when :removed_post %>
+              <% p = item[:record] %>
+              <% if p.removed_by %>
+                <%= link_to p.removed_by.name, admin_user_path(p.removed_by), class: "font-medium text-teal-700 hover:underline" %>
+              <% else %>
+                <span class="font-medium">Unknown</span>
+              <% end %>
+              removed post: <span class="font-medium"><%= p.title %></span>
+            <% when :removed_reply %>
+              <% r = item[:record] %>
+              <% if r.removed_by %>
+                <%= link_to r.removed_by.name, admin_user_path(r.removed_by), class: "font-medium text-teal-700 hover:underline" %>
+              <% else %>
+                <span class="font-medium">Unknown</span>
+              <% end %>
+              removed reply on: <span class="font-medium"><%= r.post.title %></span>
+            <% end %>
+          </span>
+          <span class="text-gray-400 shrink-0 text-xs"><%= item[:time].strftime("%b %-d, %H:%M") %></span>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>
