@@ -1,8 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
 import { marked } from "marked"
 
-const ACTIVE_TAB   = "px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600"
-const INACTIVE_TAB = "px-4 py-2 text-sm text-gray-500 hover:text-gray-700"
+const ACTIVE_TAB   = "px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400"
+const INACTIVE_TAB = "px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:text-stone-400 dark:hover:text-stone-200"
 
 export default class extends Controller {
   static targets = ["textarea", "preview", "writeTab", "previewTab"]
