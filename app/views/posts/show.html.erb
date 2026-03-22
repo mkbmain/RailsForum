@@ -26,9 +26,9 @@
       <% if logged_in? && !@post.removed? %>
         <% already_flagged = current_user.flags.exists?(content_type_id: ContentType::CONTENT_POST, flaggable_id: @post.id) %>
         <% if already_flagged %>
-          <span class="text-xs text-gray-400 ml-auto">Flagged ✓</span>
+          <span class="text-xs text-gray-400">Flagged ✓</span>
         <% else %>
-          <details class="relative ml-auto">
+          <details class="relative">
             <summary class="text-xs text-gray-400 hover:text-red-500 cursor-pointer list-none">Flag</summary>
             <div class="absolute right-0 top-5 z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-48">
               <%= form_with url: post_flags_path(@post), method: :post do |f| %>
