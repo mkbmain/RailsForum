@@ -17,9 +17,6 @@
 - [ ] **Password reset ("Forgot password")**
   No forgot-password flow exists. Users who sign up via email/password and forget it are permanently locked out. Critical gap for any public forum.
 
-- [ ] **Content reporting / flagging**
-  No way for users to report posts or replies. Moderators only discover bad content if they happen to see it. Moderation doesn't scale without this.
-
 - [ ] **Category management in admin**
   Categories can only be created via `db/seeds.rb`. No admin UI to add, rename, or reorder categories.
 

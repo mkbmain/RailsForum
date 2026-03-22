@@ -14,7 +14,7 @@ class CreateContentTypesAndFlags < ActiveRecord::Migration[8.1]
       t.bigint  :flaggable_id,     null: false
       t.integer :reason,           null: false, limit: 2
       t.datetime :resolved_at
-      t.bigint  :resolved_by_id
+      t.bigint :resolved_by_id
       t.timestamps
     end
 

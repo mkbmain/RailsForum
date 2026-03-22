@@ -4,6 +4,7 @@ class Admin::DashboardController < Admin::BaseController
     @total_posts   = Post.count
     @total_replies = Reply.count
     @banned_users  = UserBan.where("banned_until >= ?", Time.current).count
+    @pending_flags_count = Flag.pending.count
 
     bans = UserBan.includes(:banned_by, :user, :ban_reason)
                   .order(banned_from: :desc).limit(20)
