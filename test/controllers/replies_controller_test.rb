@@ -121,6 +121,7 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to post_path(@post)
     assert_match /banned until/, flash[:alert]
+    assert_match ban_reason.name, flash[:alert]
   end
 
   test "POST /posts/:post_id/replies ban redirects back to the post, not root" do

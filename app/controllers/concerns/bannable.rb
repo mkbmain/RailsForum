@@ -7,7 +7,7 @@ module Bannable
   def check_not_banned
     checker = BanChecker.new(current_user)
     if checker.banned?
-      flash[:alert] = "You are banned until #{checker.banned_until.strftime("%B %-d, %Y")}."
+      flash[:alert] = "You are banned until #{checker.banned_until.strftime("%B %-d, %Y")}. Reason: #{checker.ban_reason}."
       redirect_to ban_redirect_path
     end
   end

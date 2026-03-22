@@ -317,6 +317,7 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     post login_path, params: { email: "u@example.com", password: "pass123" }
     post posts_path, params: { post: { title: "X", body: "Y" } }
     assert_match expiry.strftime("%B %-d, %Y"), flash[:alert]
+    assert_match ban_reason.name, flash[:alert]
   end
 
   test "POST /posts is allowed when ban is expired" do
