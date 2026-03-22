@@ -803,6 +803,13 @@ CREATE UNIQUE INDEX index_users_on_email ON public.users USING btree (email);
 
 
 --
+-- Name: index_users_on_lower_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_users_on_lower_name ON public.users USING btree (lower((name)::text));
+
+
+--
 -- Name: index_users_on_provider_id_and_uid; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -960,6 +967,7 @@ ALTER TABLE ONLY public.user_bans
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260322035311'),
 ('20260322031927'),
 ('20260321021906'),
 ('20260321014337'),
