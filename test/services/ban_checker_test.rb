@@ -51,4 +51,10 @@ class BanCheckerTest < ActiveSupport::TestCase
     end
     assert_not BanChecker.new(@user).banned?
   end
+
+  test "ban_reason returns the reason name of the active ban" do
+    UserBan.create!(user: @user, ban_reason: @reason, banned_until: 1.day.from_now,
+                    banned_by: @user)
+    assert_equal "Spam", BanChecker.new(@user).ban_reason
+  end
 end

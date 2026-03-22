@@ -11,6 +11,10 @@ class BanChecker
     active_ban&.banned_until
   end
 
+  def ban_reason
+    active_ban&.ban_reason&.name
+  end
+
   private
 
   def active_ban
