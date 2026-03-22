@@ -3,32 +3,32 @@
   <%= link_to "← Back to Forum", posts_path, class: "text-blue-600 hover:underline text-sm" %>
 
   <%# Profile header %>
-  <div class="bg-white border border-stone-200 rounded-xl p-6 mt-4">
+  <div class="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl p-6 mt-4">
     <div class="flex items-start gap-4">
       <% if @profile_user.avatar_url.present? %>
         <%= image_tag @profile_user.avatar_url, class: "w-16 h-16 rounded-full", alt: "" %>
       <% else %>
-        <span class="w-16 h-16 rounded-full bg-teal-100 text-teal-700 font-bold flex items-center justify-center text-2xl">
+        <span class="w-16 h-16 rounded-full bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 font-bold flex items-center justify-center text-2xl">
           <%= (@profile_user.name.presence || "?").first.upcase %>
         </span>
       <% end %>
       <div class="flex-1 min-w-0">
         <div class="flex items-center justify-between">
-          <h1 class="text-2xl font-bold text-stone-900"><%= @profile_user.name %></h1>
+          <h1 class="text-2xl font-bold text-stone-900 dark:text-stone-100"><%= @profile_user.name %></h1>
           <% if logged_in? && current_user == @profile_user %>
             <%= link_to "Edit Profile", edit_user_path(@profile_user),
                   class: "text-sm text-blue-500 hover:underline" %>
           <% end %>
         </div>
-        <p class="text-sm text-stone-400 mt-0.5">
+        <p class="text-sm text-stone-400 dark:text-stone-500 mt-0.5">
           Member since <%= @profile_user.created_at.strftime("%B %Y") %>
         </p>
-        <div class="flex gap-4 mt-1 text-sm text-stone-500">
-          <span><strong class="text-stone-700"><%= @post_count %></strong> posts</span>
-          <span><strong class="text-stone-700"><%= @reply_count %></strong> replies</span>
+        <div class="flex gap-4 mt-1 text-sm text-stone-500 dark:text-stone-400">
+          <span><strong class="text-stone-700 dark:text-stone-300"><%= @post_count %></strong> posts</span>
+          <span><strong class="text-stone-700 dark:text-stone-300"><%= @reply_count %></strong> replies</span>
         </div>
         <% if @profile_user.bio.present? %>
-          <p class="mt-3 text-stone-700 text-sm"><%= @profile_user.bio %></p>
+          <p class="mt-3 text-stone-700 dark:text-stone-300 text-sm"><%= @profile_user.bio %></p>
         <% end %>
       </div>
     </div>
@@ -36,33 +36,33 @@
 
   <%# Activity feed %>
   <div class="mt-8">
-    <h2 class="text-lg font-semibold text-stone-800 mb-4">Activity</h2>
+    <h2 class="text-lg font-semibold text-stone-800 dark:text-stone-200 mb-4">Activity</h2>
 
     <% if @activity.empty? %>
-      <p class="text-stone-400 text-sm">No activity yet.</p>
+      <p class="text-stone-400 dark:text-stone-500 text-sm">No activity yet.</p>
     <% else %>
       <div class="space-y-3">
         <% @activity.each do |item| %>
           <% if item[:type] == :post %>
             <% post_record = item[:record] %>
-            <div class="bg-white border border-stone-200 rounded-xl p-4">
+            <div class="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl p-4">
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-xs px-2 py-0.5 bg-teal-100 text-teal-700 rounded-full font-medium">Post</span>
-                <span class="text-xs text-stone-400"><%= time_ago_in_words(post_record.created_at) %> ago</span>
+                <span class="text-xs px-2 py-0.5 bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 rounded-full font-medium">Post</span>
+                <span class="text-xs text-stone-400 dark:text-stone-500"><%= time_ago_in_words(post_record.created_at) %> ago</span>
               </div>
               <h3 class="font-semibold">
-                <%= link_to post_record.title, post_path(post_record), class: "text-stone-900 hover:text-teal-700" %>
+                <%= link_to post_record.title, post_path(post_record), class: "text-stone-900 dark:text-stone-100 hover:text-teal-700 dark:hover:text-teal-400" %>
               </h3>
             </div>
           <% else %>
             <% r = item[:record] %>
-            <div class="bg-white border border-stone-200 rounded-xl p-4">
+            <div class="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl p-4">
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-xs px-2 py-0.5 bg-stone-100 text-stone-600 rounded-full font-medium">Reply</span>
-                <span class="text-xs text-stone-400"><%= time_ago_in_words(r.created_at) %> ago in</span>
+                <span class="text-xs px-2 py-0.5 bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 rounded-full font-medium">Reply</span>
+                <span class="text-xs text-stone-400 dark:text-stone-500"><%= time_ago_in_words(r.created_at) %> ago in</span>
                 <%= link_to r.post.title, post_path(r.post), class: "text-xs text-blue-500 hover:underline truncate max-w-xs" %>
               </div>
-              <p class="text-sm text-stone-600 line-clamp-2"><%= truncate(r.body, length: 150) %></p>
+              <p class="text-sm text-stone-600 dark:text-stone-400 line-clamp-2"><%= truncate(r.body, length: 150) %></p>
             </div>
           <% end %>
         <% end %>
