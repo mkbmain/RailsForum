@@ -100,20 +100,19 @@ class SessionsTimeoutTest < ActionDispatch::IntegrationTest
   # Absent last_active_at — treated as active (deploy transition)
   # -------------------------------------------------------------------------
   test "absent last_active_at is treated as active and gets written" do
+    # Log in with timeout disabled so touch_session doesn't write last_active_at
+    silence_warnings { Object.const_set(:SESSION_TIMEOUT_MINUTES, 0) }
     login_user
-    # Manually clear last_active_at to simulate a pre-deploy session
-    # We can't write session directly in integration tests, so we skip this
-    # scenario to the controller unit test context — see note below.
-    # Instead, verify that a freshly-logged-in user (where last_active_at
-    # may not yet exist on the very first request prior to touch_session)
-    # is not immediately expired.
-    #
-    # After login, touch_session has already written last_active_at.
-    # We verify the user remains logged in on the next request.
+    assert_nil session[:last_active_at], "last_active_at should not be written when timeout is disabled"
+
+    # Re-enable timeout — simulates a deploy that activates the feature
+    silence_warnings { Object.const_set(:SESSION_TIMEOUT_MINUTES, 1) }
+
+    # Make a request — check_session_timeout sees absent last_active_at, writes it, does NOT expire
     get root_path
     assert_response :success
     assert_equal @user.id, session[:user_id]
-    assert_not_nil session[:last_active_at]
+    assert_not_nil session[:last_active_at], "last_active_at should be written on first request after feature activation"
   end
 
   # -------------------------------------------------------------------------
