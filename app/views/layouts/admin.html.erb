@@ -26,6 +26,10 @@
               class: "flex items-center px-3 py-2 rounded-lg text-sm font-medium #{
                 request.path.start_with?(admin_users_path) ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
               }" %>
+        <%= link_to "Categories", admin_categories_path,
+              class: "flex items-center px-3 py-2 rounded-lg text-sm font-medium #{
+                request.path.start_with?(admin_categories_path) ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              }" %>
         <%= link_to "Reports", admin_flags_path,
               class: "flex items-center px-3 py-2 rounded-lg text-sm font-medium #{
                 request.path.start_with?(admin_flags_path) ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
