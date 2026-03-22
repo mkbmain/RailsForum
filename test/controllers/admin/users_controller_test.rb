@@ -68,7 +68,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "GET /admin/users/:id posts tab shows all posts including removed" do
     post login_path, params: { email: "admin@example.com", password: "pass123" }
-    category = Category.find_or_create_by!(id: 2, name: "General")
+    category = Category.find_or_create_by!(id: 2, name: "General") { |c| c.position = 1 }
     @creator.posts.create!(title: "Live Post", body: "body text here ok", category: category)
     removed = @creator.posts.create!(title: "Gone Post", body: "body text here ok", category: category)
     removed.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
@@ -81,7 +81,7 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
 
   test "GET /admin/users/:id replies tab shows all replies including removed" do
     post login_path, params: { email: "admin@example.com", password: "pass123" }
-    category = Category.find_or_create_by!(id: 2, name: "General")
+    category = Category.find_or_create_by!(id: 2, name: "General") { |c| c.position = 1 }
     parent = @admin.posts.create!(title: "Parent Post", body: "body text here ok", category: category)
     parent.replies.create!(body: "live reply body ok", user: @creator)
     removed = parent.replies.create!(body: "removed reply body ok", user: @creator)

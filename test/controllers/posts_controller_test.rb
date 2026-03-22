@@ -78,7 +78,7 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
   # ---- category filter ----
 
   test "GET /posts filters by category" do
-    tech = Category.create!(id: 2, name: "Tech")
+    tech = Category.create!(id: 2, name: "Tech", position: 1)
     Post.create!(user: @user, title: "Tech Post", body: "body", category_id: 2)
     get posts_path, params: { category: 2 }
     assert_response :success
@@ -133,7 +133,7 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
   # ---- create with category ----
 
   test "POST /posts with category_id saves correctly" do
-    Category.create!(id: 2, name: "Tech")
+    Category.create!(id: 2, name: "Tech", position: 1)
     post login_path, params: { email: "u@example.com", password: "pass123" }
     post posts_path, params: { post: { title: "Tech Post", body: "Some content", category_id: 2 } }
     assert_equal 2, Post.last.category_id

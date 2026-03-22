@@ -62,7 +62,8 @@ ALTER SEQUENCE public.ban_reasons_id_seq OWNED BY public.ban_reasons.id;
 
 CREATE TABLE public.categories (
     id smallint NOT NULL,
-    name character varying(100) NOT NULL
+    name character varying(100) NOT NULL,
+    "position" smallint NOT NULL
 );
 
 
@@ -959,6 +960,7 @@ ALTER TABLE ONLY public.user_bans
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260322031927'),
 ('20260321021906'),
 ('20260321014337'),
 ('20260319160355'),
