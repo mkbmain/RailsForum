@@ -146,4 +146,29 @@ class UserTest < ActiveSupport::TestCase
                         provider_id: 3)
     assert_not user.has_role?(Role::SUB_ADMIN)
   end
+
+  test "underscore in name is replaced with space on save" do
+    user = User.new(email: "under@example.com", name: "Jane_Doe",
+                    password: "pass123", password_confirmation: "pass123",
+                    provider_id: 3)
+    user.valid?
+    assert_equal "Jane Doe", user.name
+  end
+
+  test "name without underscore is unchanged on save" do
+    user = User.new(email: "plain@example.com", name: "Jane Doe",
+                    password: "pass123", password_confirmation: "pass123",
+                    provider_id: 3)
+    user.valid?
+    assert_equal "Jane Doe", user.name
+  end
+
+  test "from_omniauth with underscore name saves with underscores replaced by spaces" do
+    auth = OpenStruct.new(
+      uid: "google-underscore",
+      info: OpenStruct.new(email: "under2@example.com", name: "Jane_Doe", image: nil)
+    )
+    user = User.from_omniauth(auth, 1)
+    assert_equal "Jane Doe", user.name
+  end
 end

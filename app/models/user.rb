@@ -10,6 +10,7 @@ class User < ApplicationRecord
   has_many :user_roles
   has_many :roles, through: :user_roles
 
+  before_validation :sanitize_name
   after_create :assign_creator_role
 
   has_secure_password validations: false
@@ -47,6 +48,10 @@ class User < ApplicationRecord
   def moderator? = sub_admin? || admin?
 
   private
+
+  def sanitize_name
+    self.name = name.gsub("_", " ") if name.present?
+  end
 
   def assign_creator_role
     roles << Role.find_by!(name: Role::CREATOR)
