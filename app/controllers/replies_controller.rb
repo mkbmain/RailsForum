@@ -22,6 +22,8 @@ class RepliesController < ApplicationController
       @page    = 1
       @replies = @post.replies.visible.includes(:user).order(:created_at).limit(@take).offset(0)
       @reply_count = @post.replies.visible.count
+      participant_ids = (@post.replies.visible.distinct.pluck(:user_id) + [@post.user_id]).uniq
+      @mention_users = User.where(id: participant_ids)
       render "posts/show", status: :unprocessable_entity
     end
   end

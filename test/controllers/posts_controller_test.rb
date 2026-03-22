@@ -711,4 +711,25 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     get post_path(@post)
     assert_equal [], assigns(:mention_users)
   end
+
+  test "reply form renders mention autocomplete data attribute with correct JSON" do
+    replier = User.create!(email: "rj@example.com", name: "Reply Jones",
+                           password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    Reply.create!(post: @post, user: replier, body: "a reply")
+
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get post_path(@post)
+
+    assert_response :success
+    assert_select "[data-controller~='mention-autocomplete']"
+    assert_select "[data-mention-autocomplete-users-value]" do |elements|
+      json = JSON.parse(elements.first["data-mention-autocomplete-users-value"])
+      tokens = json.map { |e| e["token"] }
+      displays = json.map { |e| e["display"] }
+      assert_includes tokens, "Reply_Jones"
+      assert_includes displays, "Reply Jones"
+      assert_includes tokens, "User"
+      assert_includes displays, "User"
+    end
+  end
 end
