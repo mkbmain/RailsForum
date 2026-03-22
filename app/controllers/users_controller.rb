@@ -47,21 +47,27 @@ class UsersController < ApplicationController
     page = [ (params[:page] || 1).to_i, 1 ].max
     per  = 20
 
-    recent_posts   = @profile_user.posts.visible.includes(:category)
-                                   .order(created_at: :desc).limit(per * page + 1).to_a
-    recent_replies = @profile_user.replies.visible.includes(:post)
-                                   .order(created_at: :desc).limit(per * page + 1).to_a
+    rows      = fetch_activity_rows(@profile_user, page: page, per: per)
+    @has_more = rows.size > per
+    rows      = rows.first(per)
 
-    combined = (recent_posts.map  { |p| { type: :post,  record: p, created_at: p.created_at } } +
-                recent_replies.map { |r| { type: :reply, record: r, created_at: r.created_at } })
-               .sort_by { |item| -item[:created_at].to_i }
+    post_ids   = rows.select { |r| r["kind"] == "post"  }.map { |r| r["id"].to_i }
+    reply_ids  = rows.select { |r| r["kind"] == "reply" }.map { |r| r["id"].to_i }
 
-    offset        = (page - 1) * per
-    @has_more     = combined.size > offset + per
-    @activity     = combined[offset, per] || []
-    @post_count   = @profile_user.posts.visible.count
-    @reply_count  = @profile_user.replies.visible.count
-    @page         = page
+    posts_by_id   = Post.includes(:category).where(id: post_ids).index_by(&:id)
+    replies_by_id = Reply.includes(:post).where(id: reply_ids).index_by(&:id)
+
+    @activity = rows.map do |r|
+      if r["kind"] == "post"
+        { type: :post,  record: posts_by_id[r["id"].to_i],   created_at: r["created_at"] }
+      else
+        { type: :reply, record: replies_by_id[r["id"].to_i], created_at: r["created_at"] }
+      end
+    end
+
+    @post_count  = @profile_user.posts.visible.count
+    @reply_count = @profile_user.replies.visible.count
+    @page        = page
   end
 
   private
@@ -74,6 +80,20 @@ class UsersController < ApplicationController
     unless @profile_user == current_user
       redirect_to root_path, alert: "Not authorized."
     end
+  end
+
+  def fetch_activity_rows(user, page:, per:)
+    offset      = (page - 1) * per
+    posts_sql   = Post.visible.where(user: user).select("'post' AS kind, id, created_at").to_sql
+    replies_sql = Reply.visible.where(user: user).select("'reply' AS kind, id, created_at").to_sql
+
+    # LIMIT and OFFSET are computed Ruby integers (never user-supplied strings) — safe to interpolate.
+    # .to_sql embeds the user_id literal from ActiveRecord — no injection vector.
+    ActiveRecord::Base.connection.exec_query(<<~SQL).to_a
+      (#{posts_sql}) UNION ALL (#{replies_sql})
+      ORDER BY created_at DESC
+      LIMIT #{per + 1} OFFSET #{offset}
+    SQL
   end
 
   def user_params

@@ -98,4 +98,58 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert user.reload.authenticate("pass123"), "Password should not have changed"
   end
+
+  # ---- Activity pagination tests ----
+
+  def create_active_user(email:, name:)
+    User.create!(email: email, name: name,
+                 password: "pass123", password_confirmation: "pass123",
+                 provider_id: 3)
+  end
+
+  test "GET /users/:id page 1 shows 20 items and has_more link when 22 total" do
+    user     = create_active_user(email: "pg1@example.com", name: "Pg1User")
+    category = categories(:other)
+
+    # 12 posts + 10 replies = 22 items; page 1 should show 20
+    posts = (1..12).map { |i| Post.create!(title: "Post #{i}", body: "body", user: user, category: category, created_at: i.days.ago) }
+    (1..10).map { |i| Reply.create!(body: "reply #{i}", user: user, post: posts.first, created_at: (i + 0.5).days.ago) }
+
+    get user_path(user)
+    assert_response :success
+
+    post_badges  = css_select("span").select { |n| n.text.strip == "Post" }.size
+    reply_badges = css_select("span").select { |n| n.text.strip == "Reply" }.size
+    assert_equal 20, post_badges + reply_badges, "expected 20 activity items on page 1"
+    assert_select "a", text: "Older →", count: 1
+  end
+
+  test "GET /users/:id page 2 shows remaining 2 items and no has_more link" do
+    user     = create_active_user(email: "pg2@example.com", name: "Pg2User")
+    category = categories(:other)
+
+    posts = (1..12).map { |i| Post.create!(title: "Post #{i}", body: "body", user: user, category: category, created_at: i.days.ago) }
+    (1..10).map { |i| Reply.create!(body: "reply #{i}", user: user, post: posts.first, created_at: (i + 0.5).days.ago) }
+
+    get user_path(user, page: 2)
+    assert_response :success
+
+    post_badges  = css_select("span").select { |n| n.text.strip == "Post" }.size
+    reply_badges = css_select("span").select { |n| n.text.strip == "Reply" }.size
+    assert_equal 2, post_badges + reply_badges, "expected 2 activity items on page 2"
+    assert_select "a", text: "Older →", count: 0
+  end
+
+  test "GET /users/:id activity excludes removed posts" do
+    user     = create_active_user(email: "vis@example.com", name: "VisUser")
+    category = categories(:other)
+
+    Post.create!(title: "VisiblePost", body: "body", user: user, category: category)
+    Post.create!(title: "RemovedPost", body: "body", user: user, category: category, removed_at: 1.hour.ago)
+
+    get user_path(user)
+    assert_response :success
+    assert_select "a", text: "VisiblePost"
+    assert_select "a", text: "RemovedPost", count: 0
+  end
 end
