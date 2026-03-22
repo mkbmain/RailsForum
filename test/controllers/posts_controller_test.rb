@@ -640,4 +640,34 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "a", text: /Older/
   end
+
+  # ---- Restore ----
+
+  test "PATCH restore as moderator clears removed_at and removed_by" do
+    @post.update!(removed_at: Time.current, removed_by: @sub_admin)
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    patch restore_post_path(@post)
+    @post.reload
+    assert_nil @post.removed_at
+    assert_nil @post.removed_by
+    assert_redirected_to post_path(@post)
+    assert_equal "Post restored.", flash[:notice]
+  end
+
+  test "PATCH restore as non-moderator is rejected" do
+    @post.update!(removed_at: Time.current, removed_by: @sub_admin)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch restore_post_path(@post)
+    @post.reload
+    assert_not_nil @post.removed_at
+    assert_redirected_to root_path
+  end
+
+  test "PATCH restore requires login" do
+    @post.update!(removed_at: Time.current, removed_by: @sub_admin)
+    patch restore_post_path(@post)
+    @post.reload
+    assert_not_nil @post.removed_at
+    assert_redirected_to login_path
+  end
 end

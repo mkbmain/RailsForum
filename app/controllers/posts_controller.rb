@@ -2,11 +2,11 @@ class PostsController < ApplicationController
   include RateLimitable
   include Bannable
 
-  before_action :require_login, only: [ :new, :create, :destroy, :edit, :update ]
-  before_action :require_moderator, only: [ :destroy ]
+  before_action :require_login,    only: [ :new, :create, :destroy, :edit, :update, :restore ]
+  before_action :require_moderator, only: [ :destroy, :restore ]
   before_action :check_not_banned, only: [ :create ]
   before_action :check_rate_limit, only: [ :create ]
-  before_action :set_post, only: [ :edit, :update ]
+  before_action :set_post,          only: [ :edit, :update, :restore ]
   before_action :check_ownership, only: [ :edit, :update ]
   before_action :check_edit_window, only: [ :edit, :update ]
 
@@ -84,6 +84,11 @@ class PostsController < ApplicationController
     @post.update!(removed_at: Time.current, removed_by: current_user)
     NotificationService.content_removed(@post, removed_by: current_user)
     redirect_to @post, notice: "Post removed."
+  end
+
+  def restore
+    @post.update!(removed_at: nil, removed_by: nil)
+    redirect_to @post, notice: "Post restored."
   end
 
   private
