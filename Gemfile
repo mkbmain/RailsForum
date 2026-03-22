@@ -72,4 +72,6 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+  # Restore assigns() and assert_template() helpers in controller tests
+  gem "rails-controller-testing"
 end

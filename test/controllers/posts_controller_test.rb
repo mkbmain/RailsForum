@@ -670,4 +670,45 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil @post.removed_at
     assert_redirected_to login_path
   end
+
+  # ---- @mention_users ----
+
+  test "show sets @mention_users to post author and visible repliers, deduplicated" do
+    replier_a = User.create!(email: "ra@example.com", name: "Replier A",
+                              password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    replier_b = User.create!(email: "rb@example.com", name: "Replier B",
+                              password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    Reply.create!(post: @post, user: replier_a, body: "reply one")
+    Reply.create!(post: @post, user: replier_b, body: "reply two")
+    # replier_a replies twice — should appear only once
+    Reply.create!(post: @post, user: replier_a, body: "reply three")
+
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get post_path(@post)
+
+    assert_response :success
+    mention_users = assigns(:mention_users)
+    assert_not_nil mention_users
+    assert_includes mention_users, @user       # post author
+    assert_includes mention_users, replier_a
+    assert_includes mention_users, replier_b
+    assert_equal mention_users.map(&:id).uniq.length, mention_users.length
+  end
+
+  test "show excludes removed replies from @mention_users" do
+    replier = User.create!(email: "gone@example.com", name: "Gone User",
+                           password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    Reply.create!(post: @post, user: replier, body: "about to be removed",
+                  removed_at: Time.current, removed_by: @admin)
+
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get post_path(@post)
+
+    assert_not_includes assigns(:mention_users), replier
+  end
+
+  test "show sets @mention_users to empty array for logged-out requests" do
+    get post_path(@post)
+    assert_equal [], assigns(:mention_users)
+  end
 end
