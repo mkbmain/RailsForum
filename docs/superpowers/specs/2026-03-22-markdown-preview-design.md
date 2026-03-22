@@ -29,7 +29,7 @@ Each body field gets:
 3. **Preview tab:** hides the textarea, shows a `<div>` with the rendered HTML
 4. The existing `<p class="text-xs ...">Markdown supported...</p>` hint moves below the tab bar and remains visible in both modes
 
-The preview `<div>` matches the textarea's height (`rows` attribute) so the form doesn't jump.
+The preview `<div>` matches the textarea's rendered pixel height (`textarea.offsetHeight`) so the form doesn't jump.
 
 When the textarea is empty and the user clicks Preview, show a placeholder: `<p class="text-gray-400 italic">Nothing to preview.</p>`
 
@@ -53,10 +53,16 @@ When the textarea is empty and the user clicks Preview, show a placeholder: `<p 
 
 ## importmap
 
-Pin `marked` from jsDelivr:
+Pin `marked` from jsDelivr's ESM endpoint (required — importmap needs ES modules, not UMD):
 
 ```ruby
-pin "marked", to: "https://cdn.jsdelivr.net/npm/marked/marked.min.js"
+pin "marked", to: "https://cdn.jsdelivr.net/npm/marked/+esm"
+```
+
+The controller imports it as a named export:
+
+```js
+import { marked } from "marked"
 ```
 
 ## Files Changed
@@ -78,6 +84,10 @@ No automated tests — this is purely client-side Stimulus behaviour with no ser
 3. Clicking Preview — confirming rendered output appears
 4. Clicking Write — confirming textarea returns with content intact
 5. Submitting — confirming actual post/reply renders identically
+
+## XSS Note
+
+`marked` does not sanitize HTML — it passes raw HTML through unchanged. This means a user could type `<script>` into the textarea and execute it in their own preview. This is acceptable: the preview is same-user, client-only, and never persisted or shown to others. The actual rendered post/reply always goes through `render_markdown` server-side (Redcarpet with `no_html: true` + Rails `sanitize`), which strips all raw HTML. No sanitization of the preview output is required.
 
 ## Out of Scope
 
