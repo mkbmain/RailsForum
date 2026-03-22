@@ -16,9 +16,11 @@ Rails.application.routes.draw do
   get "/search", to: "search#index"
 
   resources :posts do
+    resources :flags,     only: [ :create ]
     resources :reactions, only: [ :create, :destroy ]
     resources :replies,   only: [ :create, :destroy, :edit, :update ] do
       resources :reactions, only: [ :create, :destroy ]
+      resources :flags,     only: [ :create ]
     end
   end
 
@@ -33,6 +35,9 @@ Rails.application.routes.draw do
         patch :promote
         patch :demote
       end
+    end
+    resources :flags, only: [ :index ] do
+      member { patch :dismiss }
     end
   end
 
