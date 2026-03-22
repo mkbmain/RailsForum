@@ -1,0 +1,7 @@
+post_type:
+  id: 1
+  name: Post
+
+reply_type:
+  id: 2
+  name: Reply
