@@ -281,13 +281,61 @@ MICROSOFT_CLIENT_SECRET=...
 
 ---
 
-## Philosophy
+## Philosophy & Origin
 
-This project is intentionally a throwback. The forums of the early internet — phpBB boards, vBulletin communities, forum.site.net/index.php — were where a generation learned to have discussions online. They were rough around the edges but full of character.
+This project is intentionally a throwback. The forums of the early internet — phpBB boards, vBulletin communities, `forum.site.net/index.php` — were where a generation learned to have discussions online. They were rough around the edges but full of character. This is an attempt to rebuild that experience with modern tooling: proper security, real-time updates, and a clean architecture — but the same soul.
 
-This is an attempt to rebuild that experience with modern tooling: proper security, real-time updates, and a clean architecture — but the same soul.
+It is also an experiment in AI-assisted software development. The human owner of this project described what they wanted at a high level. Claude (Anthropic's AI assistant) made every architectural decision, chose every pattern, wrote every line of code, and designed every feature — with only minimal course corrections from the human along the way.
 
-It is also an experiment. Every feature was built through conversation with Claude, an AI assistant. The goal was to see how far you could get building a real, production-quality Rails app through AI pair programming. The answer, it turns out, is: pretty far.
+---
+
+## Architectural Decisions
+
+Everything below was chosen by Claude, not directed by the project owner. This section documents the "why" behind the major design choices, as a record of how an AI reasons through software architecture.
+
+### PostgreSQL + `structure.sql` over `schema.rb`
+
+Rails defaults to `schema.rb`, which is database-agnostic. This app deliberately uses `db/structure.sql` instead. The reason: PostgreSQL `CHECK` constraints were chosen to enforce the 1000-character body limit on posts and replies at the database level — not just in Rails validations. `schema.rb` cannot represent those constraints, so `structure.sql` was the correct choice. The constraint lives in the database and will be enforced even if someone bypasses Rails entirely.
+
+### Service objects for cross-cutting logic
+
+Rather than stuffing complex logic into models or controllers, two service objects were introduced:
+
+- **`NotificationService`** — handles all notification fan-out when a reply is created. It's designed as a clean boundary: callers invoke a single class method, and in future the internals could be swapped for an event bus with no changes elsewhere in the app.
+- **`PostRateLimiter`** — encapsulates the dynamic rate-limit calculation. New accounts are limited to 5 posts+replies per 15 minutes; that limit scales up automatically with account age (weeks and months of membership), capping at 15. The algorithm lives in one place, tested in isolation.
+- **`BanChecker`** — a thin service that checks whether a user has an active ban. Extracted so the ban check logic is not duplicated between posts and replies.
+
+### Controller concerns via `prepend`
+
+Ban checking and rate limiting are enforced via `Bannable` and `RateLimitable` controller concerns, prepended (not included) into `PostsController` and `RepliesController`. Prepend was chosen so the concern's `before_action` runs before the controller's own callbacks — a subtle but important distinction that prevents any possibility of the check being bypassed by controller-level ordering.
+
+### Soft deletion, not hard deletion
+
+When a moderator removes a post or reply, the content is soft-deleted: a `removed_at` timestamp is set and a `removed_by` foreign key recorded. The record stays in the database. This was a deliberate choice over hard deletion for several reasons: audit trail, the ability to restore content (a restore action exists), and the ability to notify the content owner of the removal. Hard deletion would lose all of that.
+
+### Polymorphic reactions and flags
+
+Both reactions (👍 ❤️ 😂 😮) and content flags (spam, harassment, etc.) use polymorphic associations so they work identically on both posts and replies without duplicating tables or logic. `Reaction` belongs to `reactionable`, `Flag` belongs to its `flaggable_id` + `content_type`. A `ContentType` lookup table was introduced rather than relying on Rails' string-based polymorphic type column for flags, giving a stable numeric FK for the constraint.
+
+### Notification deduplication
+
+The notification system has a subtle 24-hour deduplication window for "reply in thread" notifications. If you've already been notified that a thread you participated in has a new reply, you won't be notified again for the same thread for another 24 hours. This prevents inbox flood in active threads. The logic lives entirely in `NotificationService` and was designed intentionally — not as an afterthought.
+
+### Hotwire over a JavaScript framework
+
+No React, no Vue, no npm. The entire real-time UI — live reaction counts, notification badges, Turbo Stream form responses, mention autocomplete — is built with Hotwire (Turbo + Stimulus) and served over importmap. This keeps the asset pipeline simple and the deployment story clean. The tradeoff is a less flexible client, but for a forum that's a fine tradeoff.
+
+### Roles as a table, not an enum
+
+User roles (`creator`, `admin`, `sub_admin`) are stored in a `roles` table with a join table `user_roles`, not as an enum column on `User`. This supports multiple roles per user and makes the role system extensible without a migration to add enum values. The `creator` role is assigned automatically to the first user who registers.
+
+### Session timeout in the application layer
+
+Idle session timeout (defaulting to a configurable `SESSION_TIMEOUT_MINUTES`) is enforced in `ApplicationController`, not at the web server or rack layer. A `last_active_at` timestamp is written to the session on each request; if the gap exceeds the limit, the session is cleared and the user is redirected to login. This was chosen over rack-level timeout because it gives the app full control over the user-facing message and redirect behaviour.
+
+### Dark mode via Tailwind `dark:` variant + localStorage
+
+Dark mode state is stored in `localStorage` and applied via a `<script>` tag in `<head>` (before the page renders) to prevent the white flash on load. A Stimulus controller handles the toggle and keeps `localStorage` in sync. Tailwind's `dark:` variant classes are used throughout — no CSS custom properties or separate stylesheets. The `darkMode: 'class'` strategy was chosen over `'media'` to give the user explicit control independent of their OS preference.
 
 ---
 
