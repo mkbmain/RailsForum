@@ -65,7 +65,11 @@ assert_match @reason.name, flash[:alert]
 
 ### `test/controllers/replies_controller_test.rb`
 
-Update the existing banned-user flash test similarly.
+The existing `"POST /posts/:post_id/replies is blocked when user is banned"` test (line 113) asserts `assert_match /banned until/, flash[:alert]` but does not check the reason. Update that assertion to also assert:
+```ruby
+assert_match @ban_reason.name, flash[:alert]
+```
+(The test's setup creates `@ban_reason` — use that variable.)
 
 ## Out of Scope
 
