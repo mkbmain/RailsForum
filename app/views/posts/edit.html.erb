@@ -26,8 +26,24 @@
     </div>
     <div>
       <%= f.label :body, class: "block text-sm font-medium text-gray-700" %>
-      <%= f.text_area :body, rows: 8, class: "mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" %>
-      <p class="text-xs text-gray-400 mt-1">Markdown supported — **bold**, _italic_, `code`, fenced code blocks</p>
+      <div data-controller="markdown-preview">
+        <div class="flex border-b border-gray-200 mt-1 mb-2">
+          <button type="button"
+                  data-markdown-preview-target="writeTab"
+                  data-action="click->markdown-preview#showWrite"
+                  class="px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">Write</button>
+          <button type="button"
+                  data-markdown-preview-target="previewTab"
+                  data-action="click->markdown-preview#showPreview"
+                  class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Preview</button>
+        </div>
+        <%= f.text_area :body, rows: 8,
+              class: "block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500",
+              data: { markdown_preview_target: "textarea" } %>
+        <div data-markdown-preview-target="preview"
+             class="hidden w-full border border-gray-300 rounded-md px-3 py-2 text-gray-800 prose prose-sm max-w-none"></div>
+        <p class="text-xs text-gray-400 mt-1">Markdown supported — **bold**, _italic_, `code`, fenced code blocks</p>
+      </div>
     </div>
     <%= f.submit "Update Post", class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium" %>
   <% end %>

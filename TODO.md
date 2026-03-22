@@ -1,24 +1,9 @@
 # Forum TODO
 
-## Confirmed Bugs
-
-### Low — Polish
-
-- [ ] **Missing case-insensitive index on `users.name`** (`notification_service.rb:50`)
-  `User.find_by("LOWER(name) = LOWER(?)", username)` for @mention lookup has no functional index. Every mention triggers a full table scan.
-
-- [ ] **User profile activity pagination is O(n) per page** (`users_controller.rb:51`)
-  On page N, loads `per * N + 1` rows from both posts AND replies, combines in Ruby, then slices. Page 10 fetches 201 posts + 201 replies to display 20 items. Needs a UNION query or cursor-based approach.
-
----
-
 ## Must Have — Missing Features
 
 - [ ] **Password reset ("Forgot password")**
   No forgot-password flow exists. Users who sign up via email/password and forget it are permanently locked out. Critical gap for any public forum.
-
-- [ ] **Category management in admin**
-  Categories can only be created via `db/seeds.rb`. No admin UI to add, rename, or reorder categories.
 
 - [ ] **Email notifications**
   `NotificationService` is entirely in-app. Users only discover replies/mentions if they actively visit the forum. A forum without email notifications has serious retention problems.
@@ -26,12 +11,6 @@
 ---
 
 ## Should Have
-
-- [ ] **Markdown preview in compose forms**
-  Users write markdown but can't preview it before posting. Common source of formatting mistakes.
-
-- [ ] **Ban reason visible to banned user** (`bannable.rb:10`)
-  Flash shows "You are banned until [date]" but no reason. The `BanReason` model exists but isn't surfaced in the flash message.
 
 - [ ] **Rate limit feedback shows limit but not usage**
   Flash says "Limit is N posts/replies per 15 minutes" but not how many the user has already used.
