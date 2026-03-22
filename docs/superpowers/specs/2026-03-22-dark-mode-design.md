@@ -140,7 +140,9 @@ The default Tailwind `shadow-sm` and `shadow-lg` use black/transparent colors th
 
 **Other notes:**
 - The `prose prose-sm` classes in markdown rendering are not styled by a Tailwind Typography plugin (not installed) — treated as plain HTML. No `dark:prose-invert`. Markdown body text gets `dark:text-stone-200` directly on the wrapper div.
-- Form inputs with `bg-white` get `dark:bg-stone-700 dark:text-stone-100` so text remains readable.
+- Form inputs (`<input>`, `<textarea>`, `<select>`) with `bg-white` or no explicit background get `dark:bg-stone-700 dark:text-stone-100` so text remains readable. `<select>` elements require the same treatment — they do not reliably inherit background from parent containers.
+- `sessions/new.html.erb`'s card uses only `shadow` (no `border`) for visual separation from the page background. On dark surfaces, shadow alone provides minimal separation — add `dark:border dark:border-stone-700` to that card alongside `dark:bg-stone-800`.
+- The `matchMedia` listener in `connect()` should only be registered when `localStorage.getItem('theme')` is falsy. If a manual preference is stored, OS changes should be ignored.
 
 ---
 
@@ -170,7 +172,7 @@ The default Tailwind `shadow-sm` and `shadow-lg` use black/transparent colors th
 
 ## 7. Out of Scope
 
-- Admin layout/views — the `dark` class on `<html>` is inherited by admin pages. Without `dark:` variants on admin elements, some browser-native dark rendering may apply to form controls, but the overall admin UI will remain light-themed with potentially low contrast in some areas. This is a known visual degradation accepted for this iteration.
+- Admin layout/views — the `dark` class on `<html>` is inherited by admin pages. The admin layout uses `bg-stone-100` on `<body>` and `bg-gray-900` on its sidebar. In dark mode, `body` will flip to near-black (from the `@variant dark` inheritance), causing the sidebar to visually merge with the body background and lose structural separation. This is a known visual degradation accepted for this iteration. A future fix would add `class="no-dark"` to the `<html>` tag in `admin.html.erb` and scope the `@variant` selector to exclude it.
 - User preference stored server-side (DB column) — `localStorage` is sufficient.
 - Mailer template dark mode.
 - `@tailwindcss/typography` plugin and `dark:prose-invert` — the plugin is not installed; markdown body text gets a manual `dark:text-stone-200` class instead.
