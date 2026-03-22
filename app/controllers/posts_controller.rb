@@ -47,7 +47,7 @@ class PostsController < ApplicationController
     end
 
     if logged_in?
-      participant_ids = (@post.replies.visible.distinct.pluck(:user_id) + [@post.user_id]).uniq
+      participant_ids = (@post.replies.visible.distinct.pluck(:user_id) + [ @post.user_id ]).uniq
       @mention_users = User.where(id: participant_ids)
     else
       @mention_users = []
