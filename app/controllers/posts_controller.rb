@@ -36,6 +36,15 @@ class PostsController < ApplicationController
     @reply_count  = @post.replies.visible.count
     @take         = take
     @page         = page
+
+    @flagged_reply_ids = if current_user.present?
+      current_user.flags
+                  .where(content_type_id: ContentType::CONTENT_REPLY,
+                         flaggable_id: @replies.map(&:id))
+                  .pluck(:flaggable_id).to_set
+    else
+      Set.new
+    end
   end
 
   def new

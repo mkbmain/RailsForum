@@ -78,7 +78,7 @@
     <%= render partial: "replies/count", locals: { post: @post, count: @reply_count } %>
 
     <div id="replies-list-<%= @post.id %>">
-      <%= render partial: "replies/reply", collection: @replies.first(@take), as: :reply, locals: { post: @post } %>
+      <%= render partial: "replies/reply", collection: @replies.first(@take), as: :reply, locals: { post: @post, flagged_reply_ids: @flagged_reply_ids } %>
     </div>
 
     <div class="flex justify-between mt-4 mb-6">

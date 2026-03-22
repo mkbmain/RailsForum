@@ -45,7 +45,7 @@
               class: "text-xs text-orange-600 hover:underline" %>
       <% end %>
       <% if logged_in? && !reply.removed? %>
-        <% already_flagged = current_user.flags.exists?(content_type_id: ContentType::CONTENT_REPLY, flaggable_id: reply.id) %>
+        <% already_flagged = flagged_reply_ids.include?(reply.id) %>
         <% if already_flagged %>
           <span class="text-xs text-gray-400">Flagged ✓</span>
         <% else %>
