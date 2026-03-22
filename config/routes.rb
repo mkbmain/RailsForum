@@ -39,6 +39,12 @@ Rails.application.routes.draw do
     resources :flags, only: [ :index ] do
       member { patch :dismiss }
     end
+    resources :categories, only: [ :index, :new, :create, :edit, :update, :destroy ] do
+      member do
+        patch :move_up
+        patch :move_down
+      end
+    end
   end
 
   resources :notifications, only: [ :index ] do
