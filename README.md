@@ -2,7 +2,7 @@
 
 A modern, full-featured internet forum built with Ruby on Rails — designed as a spiritual successor to the classic PHP forums of the early 2000s (phpBB, vBulletin, and friends). This project is an experiment in AI-assisted development and a love letter to the era of threaded discussion boards.
 
-> **Note:** This application was written entirely by [Claude](https://claude.ai) (Anthropic's AI assistant). Every line of code, every feature, every architectural decision — all Claude. This project exists as a learning exercise and a demonstration of what AI-assisted software development looks like in practice.
+> **Note:** This application was written entirely by [Claude](https://claude.ai) (Anthropic's AI assistant). Every line of code, every feature, every architectural decision with some human steering — all Claude. This project exists as a learning exercise and a demonstration of what AI-assisted software development looks like in practice.
 
 ---
 
@@ -285,13 +285,9 @@ MICROSOFT_CLIENT_SECRET=...
 
 This project is intentionally a throwback. The forums of the early internet — phpBB boards, vBulletin communities, `forum.site.net/index.php` — were where a generation learned to have discussions online. They were rough around the edges but full of character. This is an attempt to rebuild that experience with modern tooling: proper security, real-time updates, and a clean architecture — but the same soul.
 
-It is also an experiment in AI-assisted software development. The human owner of this project described what they wanted at a high level. Claude (Anthropic's AI assistant) made every architectural decision, chose every pattern, wrote every line of code, and designed every feature — with only minimal course corrections from the human along the way.
+It is also an experiment in AI-assisted software development. The human owner of this project described what they wanted at a high level. Claude (Anthropic's AI assistant) made every architectural decision with in reason few push backs, chose every pattern, wrote every line of code, and designed every feature — with only minimal course corrections from the human along the way.
 
 ---
-
-## Architectural Decisions
-
-Everything below was chosen by Claude, not directed by the project owner. This section documents the "why" behind the major design choices, as a record of how an AI reasons through software architecture.
 
 ### PostgreSQL + `structure.sql` over `schema.rb`
 
