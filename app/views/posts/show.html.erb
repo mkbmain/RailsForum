@@ -23,6 +23,28 @@
       <% if logged_in? && current_user == @post.user && Time.current - @post.created_at <= EDIT_WINDOW_SECONDS %>
         <%= link_to "Edit", edit_post_path(@post), class: "text-xs text-blue-500 hover:underline ml-auto" %>
       <% end %>
+      <% if logged_in? && !@post.removed? %>
+        <% already_flagged = current_user.flags.exists?(content_type_id: ContentType::CONTENT_POST, flaggable_id: @post.id) %>
+        <% if already_flagged %>
+          <span class="text-xs text-gray-400 ml-auto">Flagged ✓</span>
+        <% else %>
+          <details class="relative ml-auto">
+            <summary class="text-xs text-gray-400 hover:text-red-500 cursor-pointer list-none">Flag</summary>
+            <div class="absolute right-0 top-5 z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-48">
+              <%= form_with url: post_flags_path(@post), method: :post do |f| %>
+                <p class="text-xs font-medium text-gray-700 mb-2">Report reason</p>
+                <% Flag.reasons.each_key do |reason| %>
+                  <label class="flex items-center gap-2 text-xs text-gray-600 mb-1 cursor-pointer">
+                    <%= f.radio_button :reason, reason, class: "accent-red-500" %>
+                    <%= reason.humanize %>
+                  </label>
+                <% end %>
+                <%= f.submit "Submit", class: "mt-2 w-full bg-red-500 text-white text-xs py-1 rounded hover:bg-red-600 cursor-pointer" %>
+              <% end %>
+            </div>
+          </details>
+        <% end %>
+      <% end %>
     </div>
     <% if logged_in? && can_moderate?(@post.user) && !@post.removed? %>
       <div class="mt-3 flex gap-3">
