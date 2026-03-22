@@ -5,6 +5,8 @@ class Post < ApplicationRecord
 
   has_many :replies, dependent: :destroy
   has_many :reactions, as: :reactionable, dependent: :destroy
+  has_many :flags, -> { where(content_type_id: ContentType::CONTENT_POST) },
+           class_name: "Flag", foreign_key: :flaggable_id, dependent: :destroy
 
   scope :visible, -> { where(removed_at: nil) }
 

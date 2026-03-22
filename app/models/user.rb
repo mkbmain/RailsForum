@@ -3,6 +3,7 @@ class User < ApplicationRecord
   has_many :posts, dependent: :destroy
   has_many :replies, dependent: :destroy
   has_many :reactions, dependent: :destroy
+  has_many :flags, dependent: :destroy
   has_many :notifications, dependent: :destroy
   has_many :sent_notifications, class_name: "Notification", foreign_key: :actor_id, dependent: :destroy
   has_many :user_bans
