@@ -44,6 +44,28 @@
         <%= link_to "Ban User", new_user_ban_path(user_id: reply.user_id),
               class: "text-xs text-orange-600 hover:underline" %>
       <% end %>
+      <% if logged_in? && !reply.removed? %>
+        <% already_flagged = current_user.flags.exists?(content_type_id: ContentType::CONTENT_REPLY, flaggable_id: reply.id) %>
+        <% if already_flagged %>
+          <span class="text-xs text-gray-400">Flagged ✓</span>
+        <% else %>
+          <details class="relative">
+            <summary class="text-xs text-gray-400 hover:text-red-500 cursor-pointer list-none">Flag</summary>
+            <div class="absolute right-0 bottom-5 z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-48">
+              <%= form_with url: post_reply_flags_path(post, reply), method: :post do |f| %>
+                <p class="text-xs font-medium text-gray-700 mb-2">Report reason</p>
+                <% Flag.reasons.each_key do |reason| %>
+                  <label class="flex items-center gap-2 text-xs text-gray-600 mb-1 cursor-pointer">
+                    <%= f.radio_button :reason, reason, class: "accent-red-500" %>
+                    <%= reason.humanize %>
+                  </label>
+                <% end %>
+                <%= f.submit "Submit", class: "mt-2 w-full bg-red-500 text-white text-xs py-1 rounded hover:bg-red-600 cursor-pointer" %>
+              <% end %>
+            </div>
+          </details>
+        <% end %>
+      <% end %>
     </div>
   </div>
 </div>
