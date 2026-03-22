@@ -36,10 +36,10 @@ class ApplicationController < ActionController::Base
       reset_session
 
       if turbo_frame_request? || request.format.turbo_stream? || request.format.json?
-        return head :unauthorized
+        head :unauthorized
       else
         redirect_to login_path, alert: "Your session has expired. Please log in again."
-        return
+        nil
       end
     end
   end
