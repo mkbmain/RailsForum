@@ -1,1 +1,79 @@
-<p>ok</p>
+<%# app/views/admin/flags/index.html.erb %>
+<% content_for :title, "Pending Reports – Admin Panel" %>
+
+<h1 class="text-2xl font-bold text-gray-900 mb-6">Pending Reports</h1>
+
+<% if @flags.empty? %>
+  <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-8 text-center">
+    <p class="text-sm text-gray-500">No pending reports.</p>
+  </div>
+<% else %>
+  <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-stone-50 border-b border-stone-200">
+        <tr>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Type</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Content</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Reporter</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Reason</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Reported</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">Link</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-stone-100">
+        <% @flags.each do |flag| %>
+          <% flaggable = @flaggables[[ flag.content_type_id, flag.flaggable_id ]] %>
+          <tr>
+            <td class="px-4 py-3">
+              <% if flag.content_type_id == ContentType::CONTENT_POST %>
+                <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">Post</span>
+              <% else %>
+                <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-800">Reply</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3 max-w-xs">
+              <% if flaggable.nil? %>
+                <span class="text-gray-400 italic">[content removed]</span>
+              <% elsif flaggable.removed? %>
+                <span class="text-gray-400 italic truncate block"><%= truncate(flaggable.body, length: 80) %></span>
+                <span class="inline-flex px-1 py-0.5 rounded text-xs bg-red-100 text-red-700 mt-0.5">[removed]</span>
+              <% else %>
+                <span class="text-gray-700 truncate block"><%= truncate(flaggable.is_a?(Post) ? flaggable.title : flaggable.body, length: 80) %></span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3 text-gray-700"><%= flag.user.name %></td>
+            <td class="px-4 py-3 text-gray-700"><%= flag.reason.humanize %></td>
+            <td class="px-4 py-3 text-gray-400 text-xs"><%= time_ago_in_words(flag.created_at) %> ago</td>
+            <td class="px-4 py-3">
+              <% if flaggable %>
+                <% target_post = flaggable.is_a?(Post) ? flaggable : flaggable.post %>
+                <% anchor = flaggable.is_a?(Reply) ? "reply-#{flaggable.id}" : nil %>
+                <%= link_to "View", post_path(target_post, anchor: anchor),
+                      class: "text-teal-700 hover:underline text-xs" %>
+              <% end %>
+            </td>
+            <td class="px-4 py-3 text-right">
+              <%= button_to "Dismiss", dismiss_admin_flag_path(flag), method: :patch,
+                    class: "text-xs text-red-600 hover:underline bg-transparent border-0 p-0 cursor-pointer",
+                    data: { confirm: "Dismiss this flag?" } %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="flex justify-between mt-4">
+    <% if @page > 1 %>
+      <%= link_to "← Previous", admin_flags_path(page: @page - 1),
+            class: "text-teal-700 hover:underline font-medium text-sm" %>
+    <% else %>
+      <span></span>
+    <% end %>
+    <% if @has_more %>
+      <%= link_to "Next →", admin_flags_path(page: @page + 1),
+            class: "text-teal-700 hover:underline font-medium text-sm" %>
+    <% end %>
+  </div>
+<% end %>
