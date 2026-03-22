@@ -104,4 +104,24 @@ class NotificationServiceTest < ActiveSupport::TestCase
       NotificationService.content_removed(@post, removed_by: @post_owner)
     end
   end
+
+  test "multi-word mention @Jane_Doe notifies user named 'Jane Doe'" do
+    jane = User.create!(email: "jane@example.com", name: "Jane Doe",
+                        password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    reply_with_mention = Reply.create!(post: @post, user: @replier, body: "hey @Jane_Doe nice work")
+    assert_difference "Notification.where(event_type: :mention).count", 1 do
+      NotificationService.reply_created(reply_with_mention, current_user: @replier)
+    end
+    assert_not_nil Notification.find_by(user: jane, event_type: :mention)
+  end
+
+  test "single-word mention still resolves correctly after gsub change" do
+    new_user = User.create!(email: "solo@example.com", name: "soloist",
+                            password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    reply_with_mention = Reply.create!(post: @post, user: @replier, body: "good job @soloist")
+    assert_difference "Notification.where(event_type: :mention).count", 1 do
+      NotificationService.reply_created(reply_with_mention, current_user: @replier)
+    end
+    assert_not_nil Notification.find_by(user: new_user, event_type: :mention)
+  end
 end

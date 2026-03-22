@@ -47,7 +47,7 @@ class NotificationService
 
     # 3. mention — parse @username patterns
     reply.body.scan(/@(\w+)/i).flatten.uniq.each do |username|
-      mentioned = User.find_by("LOWER(name) = LOWER(?)", username)
+      mentioned = User.find_by("LOWER(name) = LOWER(?)", username.gsub("_", " "))
       next unless mentioned
       next if mentioned == actor
       next if already_notified.include?(mentioned.id)
