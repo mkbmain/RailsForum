@@ -24,10 +24,11 @@ end
 puts "Seeded #{BanReason.count} ban reasons"
 
 [
-  [ 2, "Tech" ],
-  [ 3, "Life Style" ],
-  [ 4, "Off Topic" ]
-].each do |id, name|
-  Category.find_or_create_by!(id: id) { |c| c.name = name }
+  [ 1, "Other",      4 ],
+  [ 2, "Tech",       1 ],
+  [ 3, "Life Style", 2 ],
+  [ 4, "Off Topic",  3 ]
+].each do |id, name, position|
+  Category.find_or_create_by!(id: id) { |c| c.name = name; c.position = position }
 end
 puts "Seeded #{Category.count} categories"
