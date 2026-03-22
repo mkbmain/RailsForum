@@ -1,0 +1,10 @@
+<%# app/views/admin/categories/edit.html.erb %>
+<% content_for :title, "Edit Category – Admin Panel" %>
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">Edit Category</h1>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6 max-w-lg">
+  <%= render "form", category: @category %>
+</div>

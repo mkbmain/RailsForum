@@ -1,0 +1,53 @@
+<%# app/views/admin/categories/index.html.erb %>
+<% content_for :title, "Categories – Admin Panel" %>
+
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold text-gray-900">Categories</h1>
+  <%= link_to "New Category", new_admin_category_path,
+        class: "bg-teal-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-600" %>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-stone-50 border-b border-stone-200">
+      <tr>
+        <th class="text-left px-4 py-3 font-medium text-gray-600">Position</th>
+        <th class="text-left px-4 py-3 font-medium text-gray-600">Name</th>
+        <th class="text-right px-4 py-3 font-medium text-gray-600">Posts</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-stone-100">
+      <% @categories.each_with_index do |category, index| %>
+        <tr class="hover:bg-stone-50">
+          <td class="px-4 py-3 text-gray-500"><%= category.position %></td>
+          <td class="px-4 py-3 font-medium text-gray-900"><%= category.name %></td>
+          <td class="px-4 py-3 text-right text-gray-700"><%= @post_counts[category.id].to_i %></td>
+          <td class="px-4 py-3">
+            <div class="flex items-center justify-end gap-2">
+              <%= button_to "▲", move_up_admin_category_path(category), method: :patch,
+                    class: "text-gray-400 hover:text-gray-700 px-1 #{index == 0 ? 'hidden' : ''}" %>
+              <%= button_to "▼", move_down_admin_category_path(category), method: :patch,
+                    class: "text-gray-400 hover:text-gray-700 px-1 #{index == @categories.length - 1 ? 'hidden' : ''}" %>
+              <%= link_to "Edit", edit_admin_category_path(category),
+                    class: "text-teal-700 hover:underline" %>
+              <% if @post_counts[category.id].to_i > 0 %>
+                <button disabled title="Cannot delete: category has posts"
+                        class="text-red-300 opacity-50 cursor-not-allowed">Delete</button>
+              <% else %>
+                <%= button_to "Delete", admin_category_path(category), method: :delete,
+                      data: { turbo_confirm: "Delete #{category.name}? This cannot be undone." },
+                      class: "text-red-600 hover:text-red-800" %>
+              <% end %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+      <% if @categories.empty? %>
+        <tr>
+          <td colspan="4" class="px-4 py-8 text-center text-gray-500">No categories yet.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
