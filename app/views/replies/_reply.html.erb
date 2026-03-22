@@ -20,6 +20,8 @@
       <p class="text-xs text-gray-400 mt-1">
         Removed by <%= reply.removed_by.name %> on <%= reply.removed_at.strftime("%B %-d, %Y") %>
       </p>
+      <%= button_to "Restore", restore_post_reply_path(post, reply), method: :patch,
+            class: "text-xs text-green-600 hover:underline bg-transparent border-0 p-0 cursor-pointer mt-1" %>
     <% end %>
   <% else %>
     <div class="text-gray-800"><%= render_markdown(reply.body) %></div>
