@@ -55,12 +55,6 @@
 - [ ] **Open Graph / meta tags**
   No `<meta property="og:...">` tags. Links shared externally show no preview.
 
-- [ ] **Session timeout**
-  No session expiration configured. Users stay logged in forever unless they explicitly log out.
-
-- [ ] **Dark mode**
-  Tailwind supports it with `dark:` variants but it's not wired up.
-
 - [ ] **Post drafts / auto-save**
   No draft saving. A long post is lost if the tab closes or the session expires.
 
