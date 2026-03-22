@@ -347,4 +347,48 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
       delete post_reply_path(@post, reply)
     end
   end
+
+  # ---- Restore ----
+
+  test "PATCH restore as moderator clears removed_at and removed_by" do
+    reply = Reply.create!(post: @post, user: @user, body: "a reply")
+    reply.update!(removed_at: Time.current, removed_by: @sub_admin)
+    @post.update_column(:last_replied_at, nil)
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    patch restore_post_reply_path(@post, reply)
+    reply.reload
+    assert_nil reply.removed_at
+    assert_nil reply.removed_by
+    assert_redirected_to post_path(@post)
+    assert_equal "Reply restored.", flash[:notice]
+  end
+
+  test "PATCH restore recalculates post last_replied_at" do
+    reply = Reply.create!(post: @post, user: @user, body: "a reply")
+    reply.update!(removed_at: Time.current, removed_by: @sub_admin)
+    @post.update_column(:last_replied_at, nil)
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    patch restore_post_reply_path(@post, reply)
+    @post.reload
+    assert_not_nil @post.last_replied_at
+  end
+
+  test "PATCH restore broadcasts replace + count to replies stream" do
+    reply = Reply.create!(post: @post, user: @user, body: "a reply")
+    reply.update!(removed_at: Time.current, removed_by: @sub_admin)
+    post login_path, params: { email: "sub@example.com", password: "pass123" }
+    assert_broadcasts(stream_name_from([ @post, :replies ]), 2) do
+      patch restore_post_reply_path(@post, reply)
+    end
+  end
+
+  test "PATCH restore as non-moderator is rejected" do
+    reply = Reply.create!(post: @post, user: @user, body: "a reply")
+    reply.update!(removed_at: Time.current, removed_by: @sub_admin)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch restore_post_reply_path(@post, reply)
+    reply.reload
+    assert_not_nil reply.removed_at
+    assert_redirected_to root_path
+  end
 end

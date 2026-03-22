@@ -5,7 +5,8 @@ class RepliesController < ApplicationController
   before_action :require_login
   before_action :check_not_banned, only: [ :create ]
   before_action :check_rate_limit, only: [ :create ]
-  before_action :set_reply, only: [ :edit, :update ]
+  before_action :set_reply,          only: [ :edit, :update, :restore ]
+  before_action :require_moderator,  only: [ :restore ]
   before_action :check_ownership, only: [ :edit, :update ]
   before_action :check_edit_window, only: [ :edit, :update ]
 
@@ -35,6 +36,13 @@ class RepliesController < ApplicationController
     else
       render :edit, status: :unprocessable_entity
     end
+  end
+
+  def restore
+    @reply.update!(removed_at: nil, removed_by: nil)
+    @post.update_column(:last_replied_at, @post.replies.visible.maximum(:created_at))
+    broadcast_reply_restored
+    redirect_to @post, notice: "Reply restored."
   end
 
   def destroy
@@ -112,6 +120,16 @@ class RepliesController < ApplicationController
       target: "reply-#{@reply.id}",
       partial: "replies/reply",
       locals: { reply: @reply, post: @post }
+    )
+    broadcast_reply_count
+  end
+
+  def broadcast_reply_restored
+    Turbo::StreamsChannel.broadcast_replace_to(
+      [ @post, :replies ],
+      target: "reply-#{@reply.id}",
+      partial: "replies/reply",
+      locals: { reply: @reply, post: @post, flagged_reply_ids: Set.new }
     )
     broadcast_reply_count
   end
