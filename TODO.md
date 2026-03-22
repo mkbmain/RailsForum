@@ -43,9 +43,6 @@
 - [ ] **Quote / reply-to**
   No way to quote a specific reply when responding. Useful for keeping conversation context in long threads.
 
-- [ ] **@mention autocomplete**
-  Users must know the exact username. An autocomplete dropdown while typing `@` would help.
-
 - [ ] **Bulk moderation actions**
   Admin must act on each post/reply/user individually. No multi-select.
 
