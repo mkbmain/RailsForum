@@ -24,9 +24,6 @@
 - [ ] **Search relevance ranking**
   Search is `ILIKE` with no relevance scoring. Results are sorted by activity date. PostgreSQL full-text search (`tsvector`/`tsrank`) would improve quality significantly.
 
-- [ ] **Soft-delete restore for admins**
-  Removed posts/replies cannot be recovered. No restore action exists even for admins.
-
 - [ ] **"Removed content" notification is confusing**
   Moderation notification links to a post that just shows `[removed by moderator]` — no context, reason, or post title surfaced to the user.
 
