@@ -12,7 +12,7 @@ class PostsController < ApplicationController
 
   def index
     @categories = Category.all.order(:name)
-    posts = Post.visible.includes(:user, :category, :replies).order(Arel.sql("COALESCE(last_replied_at, created_at) DESC"))
+    posts = Post.visible.includes(:user, :category).order(Arel.sql("COALESCE(last_replied_at, created_at) DESC"))
 
     category_id = params[:category].to_i
     posts = posts.where(category_id: category_id) if category_id > 0
@@ -23,6 +23,11 @@ class PostsController < ApplicationController
     @posts = posts.limit(take + 1).offset((page - 1) * take)
     @take  = take
     @page  = page
+
+    post_ids = @posts.map(&:id)
+    @reply_counts = Reply.where(post_id: post_ids, removed_at: nil)
+                         .group(:post_id)
+                         .count
   end
 
   def show
@@ -105,14 +110,17 @@ class PostsController < ApplicationController
   end
 
   def check_ownership
+    if @post.removed?
+      return redirect_to(@post, alert: "This content has been removed and can no longer be edited.")
+    end
     unless @post.user == current_user
-      redirect_to @post, alert: "Not authorized to edit this post."
+      redirect_to(@post, alert: "Not authorized to edit this post.")
     end
   end
 
   def check_edit_window
     if Time.current - @post.created_at > EDIT_WINDOW_SECONDS
-      redirect_to @post, alert: "This post can no longer be edited (edit window has expired)."
+      redirect_to(@post, alert: "This post can no longer be edited (edit window has expired).")
     end
   end
 

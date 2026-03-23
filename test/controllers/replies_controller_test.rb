@@ -188,7 +188,7 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to post_path(@post)
   end
 
-  test "DELETE reply as admin targeting another admin's reply soft-deletes (admin can moderate any non-self)" do
+  test "DELETE reply as admin targeting another admin's reply is denied" do
     other_admin = User.create!(email: "admin2@example.com", name: "Admin2",
                                 password: "pass123", password_confirmation: "pass123",
                                 provider_id: 3)
@@ -198,7 +198,7 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     assert_no_difference "Reply.count" do
       delete post_reply_path(@post, reply)
     end
-    assert reply.reload.removed?
+    assert_not reply.reload.removed?
     assert_redirected_to post_path(@post)
   end
 
@@ -390,5 +390,61 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     reply.reload
     assert_not_nil reply.removed_at
     assert_redirected_to root_path
+  end
+
+  test "GET /posts/:post_id/replies/:id/edit redirects when parent post is removed" do
+    reply = Reply.create!(post: @post, user: @user, body: "My reply")
+    @post.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get edit_post_reply_path(@post, reply)
+    assert_redirected_to posts_path
+    assert_equal "This post is no longer available.", flash[:alert]
+  end
+
+  test "PATCH /posts/:post_id/replies/:id does not update when parent post is removed" do
+    reply = Reply.create!(post: @post, user: @user, body: "Original")
+    @post.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch post_reply_path(@post, reply), params: { reply: { body: "Changed" } }
+    assert_redirected_to posts_path
+    assert_equal "Original", reply.reload.body
+  end
+
+  test "GET /posts/:post_id/replies/:id/edit for removed reply owned by user redirects" do
+    reply = Reply.create!(post: @post, user: @user, body: "My reply")
+    reply.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get edit_post_reply_path(@post, reply)
+    assert_redirected_to post_path(@post)
+    assert_equal "This content has been removed and can no longer be edited.", flash[:alert]
+  end
+
+  test "PATCH /posts/:post_id/replies/:id for removed reply owned by user does not update" do
+    reply = Reply.create!(post: @post, user: @user, body: "My reply")
+    reply.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch post_reply_path(@post, reply), params: { reply: { body: "Changed" } }
+    assert_redirected_to post_path(@post)
+    assert_equal "My reply", reply.reload.body
+  end
+
+  test "PATCH /posts/:post_id/replies/:id by non-owner redirects and does not update" do
+    reply = Reply.create!(post: @post, user: @user, body: "Original body")
+    other = User.create!(email: "other@example.com", name: "Other",
+                         password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    post login_path, params: { email: "other@example.com", password: "pass123" }
+    patch post_reply_path(@post, reply), params: { reply: { body: "Hijacked" } }
+    assert_redirected_to post_path(@post)
+    assert_equal "Original body", reply.reload.body
+  end
+
+  test "PATCH /posts/:post_id/replies/:id outside edit window redirects and does not update" do
+    reply = Reply.create!(post: @post, user: @user, body: "Original body")
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    travel_to(EDIT_WINDOW_SECONDS.seconds.from_now + 1.second) do
+      patch post_reply_path(@post, reply), params: { reply: { body: "Late edit" } }
+      assert_redirected_to post_path(@post)
+      assert_equal "Original body", reply.reload.body
+    end
   end
 end

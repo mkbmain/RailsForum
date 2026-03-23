@@ -51,21 +51,29 @@ class Admin::UsersController < Admin::BaseController
       @has_more = items.size > TAB_PER_PAGE
       @items    = items.first(TAB_PER_PAGE)
     when "activity"
-      bans_raw         = UserBan.where(banned_by: @user).includes(:user, :ban_reason)
-                                .order(banned_from: :desc)
-                                .limit(TAB_PER_PAGE + 1).offset((page - 1) * TAB_PER_PAGE).to_a
-      posts_raw        = Post.where(removed_by: @user).includes(:user)
-                             .order(removed_at: :desc)
-                             .limit(TAB_PER_PAGE + 1).offset((page - 1) * TAB_PER_PAGE).to_a
-      replies_raw      = Reply.where(removed_by: @user).includes(:user, :post)
-                              .order(removed_at: :desc)
-                              .limit(TAB_PER_PAGE + 1).offset((page - 1) * TAB_PER_PAGE).to_a
-      @has_more        = bans_raw.size > TAB_PER_PAGE ||
-                         posts_raw.size > TAB_PER_PAGE ||
-                         replies_raw.size > TAB_PER_PAGE
-      @bans_issued     = bans_raw.first(TAB_PER_PAGE)
-      @posts_removed   = posts_raw.first(TAB_PER_PAGE)
-      @replies_removed = replies_raw.first(TAB_PER_PAGE)
+      bans_page    = [ (params[:bans_page]    || 1).to_i, 1 ].max
+      posts_page   = [ (params[:posts_page]   || 1).to_i, 1 ].max
+      replies_page = [ (params[:replies_page] || 1).to_i, 1 ].max
+
+      bans_raw    = UserBan.where(banned_by: @user).includes(:user, :ban_reason)
+                           .order(banned_from: :desc)
+                           .limit(TAB_PER_PAGE + 1).offset((bans_page - 1) * TAB_PER_PAGE).to_a
+      posts_raw   = Post.where(removed_by: @user).includes(:user)
+                        .order(removed_at: :desc)
+                        .limit(TAB_PER_PAGE + 1).offset((posts_page - 1) * TAB_PER_PAGE).to_a
+      replies_raw = Reply.where(removed_by: @user).includes(:user, :post)
+                         .order(removed_at: :desc)
+                         .limit(TAB_PER_PAGE + 1).offset((replies_page - 1) * TAB_PER_PAGE).to_a
+
+      @bans_has_more    = bans_raw.size > TAB_PER_PAGE
+      @posts_has_more   = posts_raw.size > TAB_PER_PAGE
+      @replies_has_more = replies_raw.size > TAB_PER_PAGE
+      @bans_page        = bans_page
+      @posts_page       = posts_page
+      @replies_page     = replies_page
+      @bans_issued      = bans_raw.first(TAB_PER_PAGE)
+      @posts_removed    = posts_raw.first(TAB_PER_PAGE)
+      @replies_removed  = replies_raw.first(TAB_PER_PAGE)
     end
 
     @page = page

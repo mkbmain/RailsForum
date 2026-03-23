@@ -5,9 +5,10 @@ class RepliesController < ApplicationController
   before_action :require_login
   before_action :check_not_banned, only: [ :create ]
   before_action :check_rate_limit, only: [ :create ]
-  before_action :set_reply,          only: [ :edit, :update, :restore ]
-  before_action :require_moderator,  only: [ :restore ]
-  before_action :check_ownership, only: [ :edit, :update ]
+  before_action :set_reply,             only: [ :edit, :update, :restore ]
+  before_action :require_moderator,     only: [ :restore ]
+  before_action :check_post_not_removed, only: [ :edit, :update ]
+  before_action :check_ownership,       only: [ :edit, :update ]
   before_action :check_edit_window, only: [ :edit, :update ]
 
   def create
@@ -73,15 +74,22 @@ class RepliesController < ApplicationController
     @reply = @post.replies.find(params[:id])
   end
 
+  def check_post_not_removed
+    redirect_to(posts_path, alert: "This post is no longer available.") if @post.removed?
+  end
+
   def check_ownership
+    if @reply.removed?
+      return redirect_to(@post, alert: "This content has been removed and can no longer be edited.")
+    end
     unless @reply.user == current_user
-      redirect_to @post, alert: "Not authorized to edit this reply."
+      redirect_to(@post, alert: "Not authorized to edit this reply.")
     end
   end
 
   def check_edit_window
     if Time.current - @reply.created_at > EDIT_WINDOW_SECONDS
-      redirect_to @post, alert: "This reply can no longer be edited (edit window has expired)."
+      redirect_to(@post, alert: "This reply can no longer be edited (edit window has expired).")
     end
   end
 

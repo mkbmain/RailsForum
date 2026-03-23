@@ -10,6 +10,10 @@ module ApplicationHelper
       strikethrough:      true,
       no_intra_emphasis:  true
     )
-    sanitize(parser.render(text.to_s), tags: MARKDOWN_ALLOWED_TAGS)
+    sanitize(
+      parser.render(text.to_s),
+      tags: MARKDOWN_ALLOWED_TAGS,
+      protocols: { "a" => { "href" => [ "http", "https", "mailto", :relative ] } }
+    )
   end
 end

@@ -10,6 +10,7 @@ class User < ApplicationRecord
   has_many :user_roles
   has_many :roles, through: :user_roles
 
+  before_save { self.email = email&.downcase&.strip }
   before_validation :sanitize_name
   after_create :assign_creator_role
 
@@ -46,6 +47,18 @@ class User < ApplicationRecord
   def sub_admin? = has_role?(Role::SUB_ADMIN)
   def admin?     = has_role?(Role::ADMIN)
   def moderator? = sub_admin? || admin?
+
+  def mention_handle
+    name.gsub(" ", "_").gsub(/[^\w]/, "").downcase
+  end
+
+  def self.find_by_mention_handle(handle)
+    normalized = handle.downcase.gsub("_", " ")
+    find_by(
+      "LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9 ]', '', 'g')) = LOWER(REGEXP_REPLACE(?, '[^a-zA-Z0-9 ]', '', 'g'))",
+      normalized
+    )
+  end
 
   private
 

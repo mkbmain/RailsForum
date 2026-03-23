@@ -726,10 +726,55 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
       json = JSON.parse(elements.first["data-mention-autocomplete-users-value"])
       tokens = json.map { |e| e["token"] }
       displays = json.map { |e| e["display"] }
-      assert_includes tokens, "Reply_Jones"
+      assert_includes tokens, "reply_jones"
       assert_includes displays, "Reply Jones"
-      assert_includes tokens, "User"
+      assert_includes tokens, "user"
       assert_includes displays, "User"
     end
+  end
+
+  test "GET /posts/:id/edit for removed post owned by user redirects" do
+    @post.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get edit_post_path(@post)
+    assert_redirected_to post_path(@post)
+    assert_equal "This content has been removed and can no longer be edited.", flash[:alert]
+  end
+
+  test "PATCH /posts/:id for removed post owned by user does not update" do
+    @post.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch post_path(@post), params: { post: { title: "Restore attempt" } }
+    assert_redirected_to post_path(@post)
+    assert_equal "Hello World", @post.reload.title
+  end
+
+  test "PATCH /posts/:id by non-owner redirects and does not update" do
+    other = User.create!(email: "other@example.com", name: "Other",
+                         password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    post login_path, params: { email: "other@example.com", password: "pass123" }
+    original_title = @post.title
+    patch post_path(@post), params: { post: { title: "Hijacked" } }
+    assert_redirected_to post_path(@post)
+    assert_equal original_title, @post.reload.title
+  end
+
+  test "PATCH /posts/:id outside edit window redirects and does not update" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    travel_to(EDIT_WINDOW_SECONDS.seconds.from_now + 1.second) do
+      patch post_path(@post), params: { post: { title: "Late edit" } }
+      assert_redirected_to post_path(@post)
+      assert_equal "Hello World", @post.reload.title
+    end
+  end
+
+  test "GET /posts shows correct reply count excluding removed replies" do
+    Reply.create!(post: @post, user: @user, body: "Visible reply")
+    removed_reply = Reply.create!(post: @post, user: @user, body: "Removed reply")
+    removed_reply.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+
+    get posts_path
+    assert_response :success
+    assert_equal 1, assigns(:reply_counts)[@post.id]
   end
 end

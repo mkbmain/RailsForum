@@ -42,4 +42,24 @@ class ApplicationHelperTest < ActionView::TestCase
     output = render_markdown("~~strike~~")
     assert_includes output, "<del>strike</del>"
   end
+
+  test "javascript: href is stripped from links" do
+    output = render_markdown("[evil](javascript:alert(1))")
+    assert_not_includes output, "javascript:"
+  end
+
+  test "data: href is stripped from links" do
+    output = render_markdown("[evil](data:text/html,<script>alert(1)</script>)")
+    assert_not_includes output, "data:"
+  end
+
+  test "https links are preserved" do
+    output = render_markdown("[safe](https://example.com)")
+    assert_includes output, 'href="https://example.com"'
+  end
+
+  test "relative links are preserved" do
+    output = render_markdown("[relative](/posts/1)")
+    assert_includes output, 'href="/posts/1"'
+  end
 end

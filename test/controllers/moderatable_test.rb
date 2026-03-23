@@ -19,6 +19,26 @@ class ModeratableTest < ActionDispatch::IntegrationTest
     @admin.roles << Role.find_by!(name: Role::ADMIN)
   end
 
+  test "admin cannot remove a post authored by another admin" do
+    admin2 = User.create!(email: "admin2@example.com", name: "Admin Two",
+                          password: "pass123", password_confirmation: "pass123",
+                          provider_id: 3)
+    admin2.roles << Role.find_by!(name: Role::ADMIN)
+    target_post = Post.create!(user: admin2, title: "Admin Post", body: "Admin content")
+
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    delete post_path(target_post)
+    assert_redirected_to post_path(target_post)
+    assert_not target_post.reload.removed?, "Post should not have been soft-deleted"
+  end
+
+  test "admin can still remove a post authored by a regular user" do
+    regular_post = Post.create!(user: @creator, title: "Regular Post", body: "body")
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    delete post_path(regular_post)
+    assert regular_post.reload.removed?, "Post should be soft-deleted"
+  end
+
   test "creator user is not a moderator" do
     assert_not @creator.moderator?
   end
