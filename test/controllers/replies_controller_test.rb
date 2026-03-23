@@ -209,6 +209,14 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     assert_nil @post.reload.last_replied_at
   end
 
+  test "DELETE owner hard-delete recalculates post last_replied_at" do
+    reply = Reply.create!(post: @post, user: @user, body: "Only reply")
+    @post.update_column(:last_replied_at, 1.hour.ago)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    delete post_reply_path(@post, reply)
+    assert_nil @post.reload.last_replied_at
+  end
+
   test "owner hard-delete still works after moderation path added" do
     post login_path, params: { email: "u@example.com", password: "pass123" }
     reply = Reply.create!(post: @post, user: @user, body: "My reply")

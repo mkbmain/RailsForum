@@ -60,6 +60,7 @@ class RepliesController < ApplicationController
       redirect_to @post, notice: "Reply removed."
     elsif @reply.user == current_user
       @reply.destroy
+      @post.update_column(:last_replied_at, @post.replies.visible.maximum(:created_at))
       broadcast_reply_hard_deleted
       redirect_to @post, notice: "Reply deleted."
     else
