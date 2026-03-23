@@ -48,6 +48,18 @@ class User < ApplicationRecord
   def admin?     = has_role?(Role::ADMIN)
   def moderator? = sub_admin? || admin?
 
+  def mention_handle
+    name.gsub(" ", "_").gsub(/[^\w]/, "").downcase
+  end
+
+  def self.find_by_mention_handle(handle)
+    normalized = handle.downcase.gsub("_", " ")
+    find_by(
+      "LOWER(REGEXP_REPLACE(name, '[^a-zA-Z0-9 ]', '', 'g')) = LOWER(REGEXP_REPLACE(?, '[^a-zA-Z0-9 ]', '', 'g'))",
+      normalized
+    )
+  end
+
   private
 
   def sanitize_name

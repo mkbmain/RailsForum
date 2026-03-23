@@ -172,6 +172,37 @@ class UserTest < ActiveSupport::TestCase
     assert_equal "Jane Doe", user.name
   end
 
+  test "mention_handle converts spaces to underscores and lowercases" do
+    user = User.new(name: "John Doe")
+    assert_equal "john_doe", user.mention_handle
+  end
+
+  test "mention_handle strips apostrophes" do
+    user = User.new(name: "O'Brien")
+    assert_equal "obrien", user.mention_handle
+  end
+
+  test "mention_handle strips hyphens" do
+    user = User.new(name: "Mary-Jane")
+    assert_equal "maryjane", user.mention_handle
+  end
+
+  test "find_by_mention_handle finds user with special-char name" do
+    provider = Provider.find_or_create_by!(id: 3, name: "internal")
+    user = User.create!(email: "obrien@example.com", name: "O'Brien",
+                        password: "pass123", password_confirmation: "pass123",
+                        provider_id: provider.id)
+    assert_equal user, User.find_by_mention_handle("OBrien")
+  end
+
+  test "find_by_mention_handle still finds user with plain space name" do
+    provider = Provider.find_or_create_by!(id: 3, name: "internal")
+    user = User.create!(email: "jdoe@example.com", name: "John Doe",
+                        password: "pass123", password_confirmation: "pass123",
+                        provider_id: provider.id)
+    assert_equal user, User.find_by_mention_handle("John_Doe")
+  end
+
   test "email is normalized to lowercase before save" do
     user = User.create!(email: "TEST@EXAMPLE.COM", name: "Tester",
                         password: "pass123", password_confirmation: "pass123",

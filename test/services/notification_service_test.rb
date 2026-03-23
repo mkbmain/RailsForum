@@ -124,4 +124,15 @@ class NotificationServiceTest < ActiveSupport::TestCase
     end
     assert_not_nil Notification.find_by(user: new_user, event_type: :mention)
   end
+
+  test "mentions work for users with apostrophes in names" do
+    provider = Provider.find_or_create_by!(id: 3, name: "internal")
+    obrien = User.create!(email: "obrien@example.com", name: "O'Brien",
+                          password: "pass123", password_confirmation: "pass123",
+                          provider_id: provider.id)
+    mentioning_reply = Reply.create!(post: @post, user: @replier, body: "Hey @OBrien check this out")
+    assert_difference "Notification.where(event_type: :mention, user: obrien).count", 1 do
+      NotificationService.reply_created(mentioning_reply, current_user: @replier)
+    end
+  end
 end

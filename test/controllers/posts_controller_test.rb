@@ -726,9 +726,9 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
       json = JSON.parse(elements.first["data-mention-autocomplete-users-value"])
       tokens = json.map { |e| e["token"] }
       displays = json.map { |e| e["display"] }
-      assert_includes tokens, "Reply_Jones"
+      assert_includes tokens, "reply_jones"
       assert_includes displays, "Reply Jones"
-      assert_includes tokens, "User"
+      assert_includes tokens, "user"
       assert_includes displays, "User"
     end
   end
