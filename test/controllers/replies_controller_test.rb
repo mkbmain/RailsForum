@@ -392,6 +392,24 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
   end
 
+  test "GET /posts/:post_id/replies/:id/edit for removed reply owned by user redirects" do
+    reply = Reply.create!(post: @post, user: @user, body: "My reply")
+    reply.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get edit_post_reply_path(@post, reply)
+    assert_redirected_to post_path(@post)
+    assert_equal "This content has been removed and can no longer be edited.", flash[:alert]
+  end
+
+  test "PATCH /posts/:post_id/replies/:id for removed reply owned by user does not update" do
+    reply = Reply.create!(post: @post, user: @user, body: "My reply")
+    reply.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch post_reply_path(@post, reply), params: { reply: { body: "Changed" } }
+    assert_redirected_to post_path(@post)
+    assert_equal "My reply", reply.reload.body
+  end
+
   test "PATCH /posts/:post_id/replies/:id by non-owner redirects and does not update" do
     reply = Reply.create!(post: @post, user: @user, body: "Original body")
     other = User.create!(email: "other@example.com", name: "Other",

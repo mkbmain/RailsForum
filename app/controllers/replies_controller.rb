@@ -74,6 +74,9 @@ class RepliesController < ApplicationController
   end
 
   def check_ownership
+    if @reply.removed?
+      return redirect_to(@post, alert: "This content has been removed and can no longer be edited.")
+    end
     unless @reply.user == current_user
       redirect_to(@post, alert: "Not authorized to edit this reply.")
     end

@@ -105,6 +105,9 @@ class PostsController < ApplicationController
   end
 
   def check_ownership
+    if @post.removed?
+      return redirect_to(@post, alert: "This content has been removed and can no longer be edited.")
+    end
     unless @post.user == current_user
       redirect_to(@post, alert: "Not authorized to edit this post.")
     end

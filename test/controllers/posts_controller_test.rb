@@ -733,6 +733,22 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "GET /posts/:id/edit for removed post owned by user redirects" do
+    @post.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get edit_post_path(@post)
+    assert_redirected_to post_path(@post)
+    assert_equal "This content has been removed and can no longer be edited.", flash[:alert]
+  end
+
+  test "PATCH /posts/:id for removed post owned by user does not update" do
+    @post.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch post_path(@post), params: { post: { title: "Restore attempt" } }
+    assert_redirected_to post_path(@post)
+    assert_equal "Hello World", @post.reload.title
+  end
+
   test "PATCH /posts/:id by non-owner redirects and does not update" do
     other = User.create!(email: "other@example.com", name: "Other",
                          password: "pass123", password_confirmation: "pass123", provider_id: 3)
