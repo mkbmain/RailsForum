@@ -106,13 +106,13 @@ class PostsController < ApplicationController
 
   def check_ownership
     unless @post.user == current_user
-      redirect_to @post, alert: "Not authorized to edit this post."
+      redirect_to(@post, alert: "Not authorized to edit this post.")
     end
   end
 
   def check_edit_window
     if Time.current - @post.created_at > EDIT_WINDOW_SECONDS
-      redirect_to @post, alert: "This post can no longer be edited (edit window has expired)."
+      redirect_to(@post, alert: "This post can no longer be edited (edit window has expired).")
     end
   end
 

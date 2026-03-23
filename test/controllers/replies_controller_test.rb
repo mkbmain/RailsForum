@@ -391,4 +391,24 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil reply.removed_at
     assert_redirected_to root_path
   end
+
+  test "PATCH /posts/:post_id/replies/:id by non-owner redirects and does not update" do
+    reply = Reply.create!(post: @post, user: @user, body: "Original body")
+    other = User.create!(email: "other@example.com", name: "Other",
+                         password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    post login_path, params: { email: "other@example.com", password: "pass123" }
+    patch post_reply_path(@post, reply), params: { reply: { body: "Hijacked" } }
+    assert_redirected_to post_path(@post)
+    assert_equal "Original body", reply.reload.body
+  end
+
+  test "PATCH /posts/:post_id/replies/:id outside edit window redirects and does not update" do
+    reply = Reply.create!(post: @post, user: @user, body: "Original body")
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    travel_to(EDIT_WINDOW_SECONDS.seconds.from_now + 1.second) do
+      patch post_reply_path(@post, reply), params: { reply: { body: "Late edit" } }
+      assert_redirected_to post_path(@post)
+      assert_equal "Original body", reply.reload.body
+    end
+  end
 end

@@ -732,4 +732,23 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
       assert_includes displays, "User"
     end
   end
+
+  test "PATCH /posts/:id by non-owner redirects and does not update" do
+    other = User.create!(email: "other@example.com", name: "Other",
+                         password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    post login_path, params: { email: "other@example.com", password: "pass123" }
+    original_title = @post.title
+    patch post_path(@post), params: { post: { title: "Hijacked" } }
+    assert_redirected_to post_path(@post)
+    assert_equal original_title, @post.reload.title
+  end
+
+  test "PATCH /posts/:id outside edit window redirects and does not update" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    travel_to(EDIT_WINDOW_SECONDS.seconds.from_now + 1.second) do
+      patch post_path(@post), params: { post: { title: "Late edit" } }
+      assert_redirected_to post_path(@post)
+      assert_equal "Hello World", @post.reload.title
+    end
+  end
 end

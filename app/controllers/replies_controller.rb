@@ -75,13 +75,13 @@ class RepliesController < ApplicationController
 
   def check_ownership
     unless @reply.user == current_user
-      redirect_to @post, alert: "Not authorized to edit this reply."
+      redirect_to(@post, alert: "Not authorized to edit this reply.")
     end
   end
 
   def check_edit_window
     if Time.current - @reply.created_at > EDIT_WINDOW_SECONDS
-      redirect_to @post, alert: "This reply can no longer be edited (edit window has expired)."
+      redirect_to(@post, alert: "This reply can no longer be edited (edit window has expired).")
     end
   end
 
