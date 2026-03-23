@@ -69,7 +69,7 @@
                   <span class="text-sm font-medium text-stone-700 dark:text-stone-300"><%= post.user.name %></span>
                 </div>
                 <span class="reply-count text-sm text-stone-400 dark:text-stone-500 flex items-center gap-1">
-                  &#128172; <%= post.replies.count { |r| !r.removed? } %>
+                  &#128172; <%= @reply_counts[post.id] || 0 %>
                   <% if post.last_replied_at %>
                     &middot; last reply <%= time_ago_in_words(post.last_replied_at) %> ago
                   <% end %>

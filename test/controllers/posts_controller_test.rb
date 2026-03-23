@@ -767,4 +767,14 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
       assert_equal "Hello World", @post.reload.title
     end
   end
+
+  test "GET /posts shows correct reply count excluding removed replies" do
+    Reply.create!(post: @post, user: @user, body: "Visible reply")
+    removed_reply = Reply.create!(post: @post, user: @user, body: "Removed reply")
+    removed_reply.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+
+    get posts_path
+    assert_response :success
+    assert_equal 1, assigns(:reply_counts)[@post.id]
+  end
 end

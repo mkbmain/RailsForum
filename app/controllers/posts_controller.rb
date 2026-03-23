@@ -12,7 +12,7 @@ class PostsController < ApplicationController
 
   def index
     @categories = Category.all.order(:name)
-    posts = Post.visible.includes(:user, :category, :replies).order(Arel.sql("COALESCE(last_replied_at, created_at) DESC"))
+    posts = Post.visible.includes(:user, :category).order(Arel.sql("COALESCE(last_replied_at, created_at) DESC"))
 
     category_id = params[:category].to_i
     posts = posts.where(category_id: category_id) if category_id > 0
@@ -23,6 +23,11 @@ class PostsController < ApplicationController
     @posts = posts.limit(take + 1).offset((page - 1) * take)
     @take  = take
     @page  = page
+
+    post_ids = @posts.map(&:id)
+    @reply_counts = Reply.where(post_id: post_ids, removed_at: nil)
+                         .group(:post_id)
+                         .count
   end
 
   def show
