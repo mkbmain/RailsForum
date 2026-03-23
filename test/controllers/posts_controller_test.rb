@@ -487,6 +487,28 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_match /not authorized/i, flash[:alert]
   end
 
+  test "GET /posts/:id/edit by non-owner when edit window also expired redirects with not-authorized message" do
+    other = User.create!(email: "other@example.com", name: "Other",
+                         password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    other_post = Post.create!(user: other, title: "Other Post", body: "body")
+    other_post.update_column(:created_at, (EDIT_WINDOW_SECONDS + 1).seconds.ago)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get edit_post_path(other_post)
+    assert_redirected_to post_path(other_post)
+    assert_match /not authorized/i, flash[:alert]
+  end
+
+  test "PATCH /posts/:id by non-owner when edit window also expired redirects with not-authorized message" do
+    other = User.create!(email: "other@example.com", name: "Other",
+                         password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    other_post = Post.create!(user: other, title: "Other Post", body: "body")
+    other_post.update_column(:created_at, (EDIT_WINDOW_SECONDS + 1).seconds.ago)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch post_path(other_post), params: { post: { title: "Hacked", body: "hacked" } }
+    assert_redirected_to post_path(other_post)
+    assert_match /not authorized/i, flash[:alert]
+  end
+
   test "PATCH /posts/:id with invalid params re-renders edit with category dropdown" do
     post login_path, params: { email: "u@example.com", password: "pass123" }
     patch post_path(@post), params: { post: { title: "", body: "" } }
