@@ -392,6 +392,24 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
   end
 
+  test "GET /posts/:post_id/replies/:id/edit redirects when parent post is removed" do
+    reply = Reply.create!(post: @post, user: @user, body: "My reply")
+    @post.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get edit_post_reply_path(@post, reply)
+    assert_redirected_to posts_path
+    assert_equal "This post is no longer available.", flash[:alert]
+  end
+
+  test "PATCH /posts/:post_id/replies/:id does not update when parent post is removed" do
+    reply = Reply.create!(post: @post, user: @user, body: "Original")
+    @post.update_columns(removed_at: Time.current, removed_by_id: @admin.id)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch post_reply_path(@post, reply), params: { reply: { body: "Changed" } }
+    assert_redirected_to posts_path
+    assert_equal "Original", reply.reload.body
+  end
+
   test "GET /posts/:post_id/replies/:id/edit for removed reply owned by user redirects" do
     reply = Reply.create!(post: @post, user: @user, body: "My reply")
     reply.update_columns(removed_at: Time.current, removed_by_id: @admin.id)

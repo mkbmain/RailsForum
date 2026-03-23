@@ -5,9 +5,10 @@ class RepliesController < ApplicationController
   before_action :require_login
   before_action :check_not_banned, only: [ :create ]
   before_action :check_rate_limit, only: [ :create ]
-  before_action :set_reply,          only: [ :edit, :update, :restore ]
-  before_action :require_moderator,  only: [ :restore ]
-  before_action :check_ownership, only: [ :edit, :update ]
+  before_action :set_reply,             only: [ :edit, :update, :restore ]
+  before_action :require_moderator,     only: [ :restore ]
+  before_action :check_post_not_removed, only: [ :edit, :update ]
+  before_action :check_ownership,       only: [ :edit, :update ]
   before_action :check_edit_window, only: [ :edit, :update ]
 
   def create
@@ -71,6 +72,10 @@ class RepliesController < ApplicationController
   def set_reply
     @post  = Post.find(params[:post_id])
     @reply = @post.replies.find(params[:id])
+  end
+
+  def check_post_not_removed
+    redirect_to(posts_path, alert: "This post is no longer available.") if @post.removed?
   end
 
   def check_ownership
