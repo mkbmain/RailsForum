@@ -179,6 +179,14 @@
           <% end %>
         </ul>
       <% end %>
+      <% if @bans_has_more %>
+        <%= link_to "More bans →",
+              admin_user_path(@user, tab: "activity",
+                              bans_page: @bans_page + 1,
+                              posts_page: @posts_page,
+                              replies_page: @replies_page),
+              class: "text-sm text-blue-600 hover:underline" %>
+      <% end %>
     </div>
     <div class="px-5 py-4 border-b border-stone-100">
       <h3 class="text-sm font-semibold text-gray-700 mb-3">Posts Removed</h3>
@@ -193,6 +201,14 @@
             </li>
           <% end %>
         </ul>
+      <% end %>
+      <% if @posts_has_more %>
+        <%= link_to "More removed posts →",
+              admin_user_path(@user, tab: "activity",
+                              bans_page: @bans_page,
+                              posts_page: @posts_page + 1,
+                              replies_page: @replies_page),
+              class: "text-sm text-blue-600 hover:underline" %>
       <% end %>
     </div>
     <div class="px-5 py-4">
@@ -210,12 +226,20 @@
           <% end %>
         </ul>
       <% end %>
+      <% if @replies_has_more %>
+        <%= link_to "More removed replies →",
+              admin_user_path(@user, tab: "activity",
+                              bans_page: @bans_page,
+                              posts_page: @posts_page,
+                              replies_page: @replies_page + 1),
+              class: "text-sm text-blue-600 hover:underline" %>
+      <% end %>
     </div>
   <% end %>
 </div>
 
 <%# Pagination %>
-<% if %w[posts replies bans activity].include?(@tab) %>
+<% if %w[posts replies bans].include?(@tab) %>
   <div class="flex justify-between items-center mt-4 text-sm text-gray-600">
     <% if @page > 1 %>
       <%= link_to "← Previous", admin_user_path(@user, tab: @tab, page: @page - 1),

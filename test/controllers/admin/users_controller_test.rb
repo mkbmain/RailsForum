@@ -198,4 +198,22 @@ class Admin::UsersControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to admin_user_path(@creator)
     assert_match /already/i, flash[:alert]
   end
+
+  test "activity tab sets has_more per collection independently" do
+    ban_reason = BanReason.find_or_create_by!(name: "Spam")
+    (Admin::UsersController::TAB_PER_PAGE + 1).times do |i|
+      banned = User.create!(email: "banned#{i}@example.com", name: "Banned #{i}",
+                            password: "pass123", password_confirmation: "pass123",
+                            provider_id: 3)
+      UserBan.create!(user: banned, ban_reason: ban_reason, banned_by: @admin,
+                      banned_until: 1.year.from_now, banned_from: Time.current)
+    end
+
+    post login_path, params: { email: "admin@example.com", password: "pass123" }
+    get admin_user_path(@admin, tab: "activity")
+    assert_response :success
+    assert assigns(:bans_has_more), "bans should have more"
+    assert_not assigns(:posts_has_more), "posts should not have more (none exist)"
+    assert_not assigns(:replies_has_more), "replies should not have more (none exist)"
+  end
 end
