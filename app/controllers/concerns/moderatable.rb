@@ -14,6 +14,7 @@ module Moderatable
   def can_moderate?(target_user)
     return false unless current_user&.moderator?
     return false if current_user == target_user
+    return false if target_user.admin?
     return true if current_user.admin?
     !target_user.sub_admin? && !target_user.admin?
   end

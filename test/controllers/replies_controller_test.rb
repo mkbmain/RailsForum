@@ -188,7 +188,7 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to post_path(@post)
   end
 
-  test "DELETE reply as admin targeting another admin's reply soft-deletes (admin can moderate any non-self)" do
+  test "DELETE reply as admin targeting another admin's reply is denied" do
     other_admin = User.create!(email: "admin2@example.com", name: "Admin2",
                                 password: "pass123", password_confirmation: "pass123",
                                 provider_id: 3)
@@ -198,7 +198,7 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     assert_no_difference "Reply.count" do
       delete post_reply_path(@post, reply)
     end
-    assert reply.reload.removed?
+    assert_not reply.reload.removed?
     assert_redirected_to post_path(@post)
   end
 
