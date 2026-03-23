@@ -1,0 +1,27 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "261973e63ed6fd517ae69ee454d65e460ab7c033f320813a0d1513638003f56d",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/controllers/users_controller.rb",
+      "line": 95,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "ActiveRecord::Base.connection.exec_query(...LIMIT #{(per + 1)} OFFSET #{((page - 1) * per)}...)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "UsersController",
+        "method": "fetch_activity_rows"
+      },
+      "user_input": "(per + 1)",
+      "confidence": "Medium",
+      "cwe_id": [89],
+      "note": "False positive. `per` is a hardcoded literal (20) and `page` is params[:page].to_i.max(1) — both guaranteed Ruby integers before reaching this method. No string can be interpolated here."
+    }
+  ],
+  "updated": "2026-03-23 00:00:00 +0000",
+  "brakeman_version": "8.0.4"
+}
