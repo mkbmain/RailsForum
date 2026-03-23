@@ -10,6 +10,7 @@ class User < ApplicationRecord
   has_many :user_roles
   has_many :roles, through: :user_roles
 
+  before_save { self.email = email&.downcase&.strip }
   before_validation :sanitize_name
   after_create :assign_creator_role
 

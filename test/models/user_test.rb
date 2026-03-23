@@ -171,4 +171,23 @@ class UserTest < ActiveSupport::TestCase
     user = User.from_omniauth(auth, 1)
     assert_equal "Jane Doe", user.name
   end
+
+  test "email is normalized to lowercase before save" do
+    user = User.create!(email: "TEST@EXAMPLE.COM", name: "Tester",
+                        password: "pass123", password_confirmation: "pass123",
+                        provider_id: Provider.find_or_create_by!(id: 3, name: "internal").id)
+    assert_equal "test@example.com", user.reload.email
+  end
+
+  test "email uniqueness is enforced case-insensitively at DB level" do
+    provider = Provider.find_or_create_by!(id: 3, name: "internal")
+    User.create!(email: "dupe@example.com", name: "First",
+                 password: "pass123", password_confirmation: "pass123", provider_id: provider.id)
+    assert_raises(ActiveRecord::RecordNotUnique) do
+      ActiveRecord::Base.connection.execute(
+        "INSERT INTO users (email, name, password_digest, provider_id, created_at, updated_at) " \
+        "VALUES ('DUPE@EXAMPLE.COM', 'Second', 'x', #{provider.id}, NOW(), NOW())"
+      )
+    end
+  end
 end

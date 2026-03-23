@@ -796,10 +796,10 @@ CREATE UNIQUE INDEX index_user_roles_on_user_id_and_role_id ON public.user_roles
 
 
 --
--- Name: index_users_on_email; Type: INDEX; Schema: public; Owner: -
+-- Name: index_users_on_lower_email; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX index_users_on_email ON public.users USING btree (email);
+CREATE UNIQUE INDEX index_users_on_lower_email ON public.users USING btree (lower((email)::text));
 
 
 --
@@ -967,6 +967,7 @@ ALTER TABLE ONLY public.user_bans
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260323163655'),
 ('20260322035311'),
 ('20260322031927'),
 ('20260321021906'),
