@@ -203,6 +203,28 @@ class UserTest < ActiveSupport::TestCase
     assert_equal user, User.find_by_mention_handle("John_Doe")
   end
 
+  test "from_omniauth does not overwrite email or name on subsequent logins" do
+    provider_id = Provider.find_or_create_by!(id: 1, name: "google").id
+    auth = OmniAuth::AuthHash.new(
+      uid: "google-uid-abc",
+      info: { email: "original@example.com", name: "Original Name", image: "https://img.example.com/1.jpg" }
+    )
+    user = User.from_omniauth(auth, provider_id)
+    assert_equal "original@example.com", user.email
+    assert_equal "Original Name", user.name
+
+    # Simulate provider-side email/name change
+    changed_auth = OmniAuth::AuthHash.new(
+      uid: "google-uid-abc",
+      info: { email: "changed@example.com", name: "Changed Name", image: "https://img.example.com/2.jpg" }
+    )
+    same_user = User.from_omniauth(changed_auth, provider_id)
+    assert_equal user.id, same_user.id
+    assert_equal "original@example.com", same_user.email,   "email must not be overwritten"
+    assert_equal "Original Name",        same_user.name,    "name must not be overwritten"
+    assert_equal "https://img.example.com/2.jpg", same_user.avatar_url, "avatar_url should refresh"
+  end
+
   test "email is normalized to lowercase before save" do
     user = User.create!(email: "TEST@EXAMPLE.COM", name: "Tester",
                         password: "pass123", password_confirmation: "pass123",

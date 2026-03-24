@@ -28,9 +28,11 @@ class User < ApplicationRecord
   def self.from_omniauth(auth, provider_id)
     raise ArgumentError, "OAuth response missing email" unless auth.info.email.present?
     find_or_initialize_by(uid: auth.uid, provider_id: provider_id).tap do |user|
-      user.email       = auth.info.email
-      user.name        = auth.info.name
-      user.avatar_url  = auth.info.image
+      if user.new_record?
+        user.email = auth.info.email
+        user.name  = auth.info.name
+      end
+      user.avatar_url = auth.info.image
       user.save!
     end
   end
