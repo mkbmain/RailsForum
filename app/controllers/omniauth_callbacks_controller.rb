@@ -6,6 +6,12 @@ class OmniauthCallbacksController < ApplicationController
 
   def handle
     auth = request.env["omniauth.auth"]
+
+    unless auth
+      redirect_to login_path, alert: "Authentication error. Please try signing in again."
+      return
+    end
+
     provider_id = PROVIDER_IDS[auth.provider]
 
     unless provider_id

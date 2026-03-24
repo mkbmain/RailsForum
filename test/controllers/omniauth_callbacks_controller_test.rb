@@ -42,3 +42,19 @@ class OmniauthCallbacksControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to login_path
   end
 end
+
+class OmniauthCallbacksHandleUnitTest < ActionController::TestCase
+  tests OmniauthCallbacksController
+
+  setup do
+    Provider.find_or_create_by!(id: 1, name: "google")
+    Provider.find_or_create_by!(id: 3, name: "internal")
+  end
+
+  test "handle redirects to login when omniauth.auth is nil" do
+    request.env["omniauth.auth"] = nil
+    get :handle, params: { provider: "google_oauth2" }
+    assert_redirected_to login_path
+    assert_equal "Authentication error. Please try signing in again.", flash[:alert]
+  end
+end
