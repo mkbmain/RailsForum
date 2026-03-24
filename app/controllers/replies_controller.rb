@@ -115,7 +115,7 @@ class RepliesController < ApplicationController
       [ @post, :replies ],
       target: "replies-list-#{@post.id}",
       partial: "replies/reply",
-      locals: { reply: @reply, post: @post }
+      locals: { reply: @reply, post: @post, flagged_reply_ids: Set.new }
     )
     broadcast_reply_count
   end
@@ -125,7 +125,7 @@ class RepliesController < ApplicationController
       [ @post, :replies ],
       target: "reply-#{@reply.id}",
       partial: "replies/reply",
-      locals: { reply: @reply, post: @post }
+      locals: { reply: @reply, post: @post, flagged_reply_ids: Set.new }
     )
   end
 
@@ -134,7 +134,7 @@ class RepliesController < ApplicationController
       [ @post, :replies ],
       target: "reply-#{@reply.id}",
       partial: "replies/reply",
-      locals: { reply: @reply, post: @post }
+      locals: { reply: @reply, post: @post, flagged_reply_ids: Set.new }
     )
     broadcast_reply_count
   end

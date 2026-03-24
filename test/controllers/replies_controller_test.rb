@@ -488,4 +488,20 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
       assert_equal "Original body", reply.reload.body
     end
   end
+
+  test "POST /posts/:post_id/replies broadcasts reply with flagged_reply_ids local" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    captured = []
+    original = Turbo::StreamsChannel.method(:broadcast_append_to)
+    Turbo::StreamsChannel.define_singleton_method(:broadcast_append_to) do |*args, **kwargs|
+      captured << kwargs[:locals] if kwargs[:partial]&.include?("reply")
+      original.call(*args, **kwargs)
+    end
+    post post_replies_path(@post), params: { reply: { body: "hello world" } }
+    assert_equal 1, captured.size
+    assert captured.first.key?(:flagged_reply_ids),
+      "broadcast must pass flagged_reply_ids local to avoid NameError in partial"
+  ensure
+    Turbo::StreamsChannel.singleton_class.remove_method(:broadcast_append_to) rescue nil
+  end
 end
