@@ -21,8 +21,9 @@ class NotificationService
     end
 
     # 2. reply_in_thread — notify prior participants (deduplicated per 24h)
+    reply_ids_in_post = post.replies.pluck(:id)
     recent_thread_notified_ids = Notification
-      .where(notifiable_type: "Post", notifiable_id: post.id, event_type: :reply_in_thread)
+      .where(notifiable_type: "Reply", notifiable_id: reply_ids_in_post, event_type: :reply_in_thread)
       .where("created_at > ?", 24.hours.ago)
       .pluck(:user_id)
 
@@ -38,8 +39,8 @@ class NotificationService
       Notification.create!(
         user_id:          uid,
         actor_id:         actor.id,
-        notifiable_type:  "Post",
-        notifiable_id:    post.id,
+        notifiable_type:  "Reply",
+        notifiable_id:    reply.id,
         event_type:       :reply_in_thread
       )
       already_notified.add(uid)

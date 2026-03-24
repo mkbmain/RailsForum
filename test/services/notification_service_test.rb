@@ -45,15 +45,21 @@ class NotificationServiceTest < ActiveSupport::TestCase
     assert_nil Notification.find_by(user: @replier)
   end
 
-  test "does not send reply_in_thread if already notified within 24 hours" do
-    # Pre-create a recent notification for the participant on this post
-    Notification.create!(
-      user: @participant, actor: @replier,
-      notifiable: @post, event_type: :reply_in_thread,
-      created_at: 1.hour.ago
-    )
-    assert_no_difference "Notification.where(event_type: :reply_in_thread, user: @participant).count" do
-      reply2 = Reply.create!(post: @post, user: @replier, body: "another reply")
+  test "reply_in_thread notification points to the reply, not the post" do
+    NotificationService.reply_created(@reply, current_user: @replier)
+    n = Notification.find_by(user: @participant, event_type: :reply_in_thread)
+    assert_not_nil n
+    assert_equal "Reply", n.notifiable_type,
+      "reply_in_thread notifiable must be a Reply so the view can anchor to it"
+    assert_equal @reply.id, n.notifiable_id
+  end
+
+  test "reply_in_thread dedup still works after notifiable change" do
+    NotificationService.reply_created(@reply, current_user: @replier)
+    assert_equal 1, Notification.where(user: @participant, event_type: :reply_in_thread).count
+
+    reply2 = Reply.create!(post: @post, user: @replier, body: "follow-up reply")
+    assert_no_difference "Notification.where(user: @participant, event_type: :reply_in_thread).count" do
       NotificationService.reply_created(reply2, current_user: @replier)
     end
   end
