@@ -1,6 +1,6 @@
 <%# app/views/reactions/_reactions.html.erb %>
-<% user_reaction   = logged_in? ? reactionable.reactions.find_by(user_id: current_user.id) : nil %>
-<% reaction_counts = reactionable.reactions.group(:emoji).count %>
+<% user_reaction   = logged_in? ? reactionable.reactions.find { |r| r.user_id == current_user.id } : nil %>
+<% reaction_counts = reactionable.reactions.group_by(&:emoji).transform_values(&:count) %>
 
 <div class="flex flex-wrap gap-2 py-3">
   <% Reaction::ALLOWED_REACTIONS.each do |emoji| %>

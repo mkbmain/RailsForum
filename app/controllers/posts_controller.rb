@@ -31,13 +31,13 @@ class PostsController < ApplicationController
   end
 
   def show
-    @post  = Post.includes(:category).find(params[:id])
+    @post  = Post.includes(:category, :reactions).find(params[:id])
     @reply = Reply.new
 
     take = (params[:take] || 20).to_i.clamp(1, 100)
     page = [ (params[:page] || 1).to_i, 1 ].max
 
-    @replies      = @post.replies.visible.includes(:user).order(:created_at).limit(take + 1).offset((page - 1) * take)
+    @replies      = @post.replies.visible.includes(:user, :reactions).order(:created_at).limit(take + 1).offset((page - 1) * take)
     @reply_count  = @post.replies.visible.count
     @take         = take
     @page         = page

@@ -799,4 +799,20 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal 1, assigns(:reply_counts)[@post.id]
   end
+
+  test "GET /posts/:id does not fire per-reply reaction queries" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    reply1 = Reply.create!(post: @post, user: @user, body: "reply 1")
+    reply2 = Reply.create!(post: @post, user: @user, body: "reply 2")
+    Reaction.create!(user: @user, reactionable: reply1, emoji: "👍")
+    Reaction.create!(user: @user, reactionable: reply2, emoji: "❤️")
+
+    query_count = 0
+    counter = ->(*, **) { query_count += 1 }
+    ActiveSupport::Notifications.subscribed(counter, "sql.active_record") do
+      get post_path(@post)
+    end
+    assert_response :ok
+    assert query_count < 28, "Expected <28 queries, got #{query_count} — possible N+1 on reactions"
+  end
 end
