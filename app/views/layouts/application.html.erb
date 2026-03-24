@@ -63,7 +63,7 @@
                   class: "bg-white dark:bg-stone-700 text-teal-700 dark:text-white font-semibold rounded-lg px-4 py-1.5 hover:bg-teal-50 dark:hover:bg-stone-600" %>
 
             <%# Notification bell %>
-            <% unread_count = current_user.notifications.where(read_at: nil).count %>
+            <% unread_count = unread_notification_count %>
             <%= link_to notifications_path, class: "relative inline-flex items-center text-teal-100 hover:text-white" do %>
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
