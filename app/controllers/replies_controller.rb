@@ -3,7 +3,7 @@ class RepliesController < ApplicationController
   include Bannable
 
   before_action :require_login
-  before_action :check_not_banned, only: [ :create ]
+  before_action :check_not_banned, only: [ :create, :edit, :update ]
   before_action :check_rate_limit, only: [ :create ]
   before_action :set_reply,             only: [ :edit, :update, :restore ]
   before_action :require_moderator,     only: [ :restore ]

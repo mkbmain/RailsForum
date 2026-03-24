@@ -241,6 +241,29 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
 
   # ---- edit / update ----
 
+  test "GET edit reply is blocked for banned user" do
+    reply = Reply.create!(post: @post, user: @user, body: "my reply")
+    UserBan.create!(user: @user, banned_by: @admin,
+                    ban_reason: BanReason.find_or_create_by!(name: "Spam"),
+                    banned_until: 2.hours.from_now)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    get edit_post_reply_path(@post, reply)
+    assert_redirected_to post_path(@post)
+    assert_match "banned", flash[:alert]
+  end
+
+  test "PATCH update reply is blocked for banned user" do
+    reply = Reply.create!(post: @post, user: @user, body: "my reply")
+    UserBan.create!(user: @user, banned_by: @admin,
+                    ban_reason: BanReason.find_or_create_by!(name: "Spam"),
+                    banned_until: 2.hours.from_now)
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    patch post_reply_path(@post, reply), params: { reply: { body: "edited" } }
+    assert_redirected_to post_path(@post)
+    assert_match "banned", flash[:alert]
+    assert_equal "my reply", reply.reload.body
+  end
+
   test "GET /posts/:post_id/replies/:id/edit requires login" do
     reply = Reply.create!(post: @post, user: @user, body: "A reply")
     get edit_post_reply_path(@post, reply)
