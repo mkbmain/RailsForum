@@ -3,16 +3,16 @@ class RepliesController < ApplicationController
   include Bannable
 
   before_action :require_login
-  before_action :check_not_banned, only: [ :create, :edit, :update ]
-  before_action :check_rate_limit, only: [ :create ]
-  before_action :set_reply,             only: [ :edit, :update, :restore ]
-  before_action :require_moderator,     only: [ :restore ]
-  before_action :check_post_not_removed, only: [ :edit, :update ]
-  before_action :check_ownership,       only: [ :edit, :update ]
-  before_action :check_edit_window, only: [ :edit, :update ]
+  before_action :check_not_banned,       only: [ :create, :edit, :update ]
+  before_action :check_rate_limit,       only: [ :create ]
+  before_action :set_post,               only: [ :create ]
+  before_action :set_reply,              only: [ :edit, :update, :restore ]
+  before_action :require_moderator,      only: [ :restore ]
+  before_action :check_post_not_removed, only: [ :create, :edit, :update ]
+  before_action :check_ownership,        only: [ :edit, :update ]
+  before_action :check_edit_window,      only: [ :edit, :update ]
 
   def create
-    @post = Post.find(params[:post_id])
     @reply = @post.replies.build(reply_params.merge(user: current_user))
     if @reply.save
       NotificationService.reply_created(@reply, current_user: current_user)
@@ -69,6 +69,10 @@ class RepliesController < ApplicationController
   end
 
   private
+
+  def set_post
+    @post = Post.find(params[:post_id])
+  end
 
   def set_reply
     @post  = Post.find(params[:post_id])

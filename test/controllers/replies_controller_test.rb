@@ -241,6 +241,16 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
 
   # ---- edit / update ----
 
+  test "POST /posts/:post_id/replies is rejected when post is removed" do
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+    @post.update!(removed_at: Time.current, removed_by: @user)
+    assert_no_difference "Reply.count" do
+      post post_replies_path(@post), params: { reply: { body: "sneaky reply" } }
+    end
+    assert_redirected_to posts_path
+    assert_match "no longer available", flash[:alert]
+  end
+
   test "GET edit reply is blocked for banned user" do
     reply = Reply.create!(post: @post, user: @user, body: "my reply")
     UserBan.create!(user: @user, banned_by: @admin,
