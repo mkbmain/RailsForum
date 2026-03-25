@@ -44,13 +44,15 @@ class SessionsTimeoutTest < ActionDispatch::IntegrationTest
   # -------------------------------------------------------------------------
   # Expired session — Turbo Frame request
   # -------------------------------------------------------------------------
-  test "expired session returns 401 for Turbo Frame requests" do
+  test "expired session redirects full page for Turbo Frame requests" do
     travel_to 2.minutes.ago do
       login_user
     end
 
     get root_path, headers: { "Turbo-Frame" => "main" }
-    assert_response :unauthorized
+    assert_redirected_to login_path
+    assert_equal "Your session has expired. Please log in again.", flash[:alert]
+    assert_equal "_top", response.headers["Turbo-Frame"]
     assert_nil session[:user_id]
   end
 

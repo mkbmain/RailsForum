@@ -35,11 +35,11 @@ class ApplicationController < ActionController::Base
       @current_user = nil
       reset_session
 
-      if turbo_frame_request? || request.format.turbo_stream? || request.format.json?
+      if request.format.turbo_stream? || request.format.json?
         head :unauthorized
       else
+        response.set_header("Turbo-Frame", "_top") if turbo_frame_request?
         redirect_to login_path, alert: "Your session has expired. Please log in again."
-        nil
       end
     end
   end
