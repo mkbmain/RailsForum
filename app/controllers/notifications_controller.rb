@@ -2,13 +2,16 @@ class NotificationsController < ApplicationController
   before_action :require_login
 
   def index
-    @notifications = current_user.notifications
-                                  .includes(:actor, :notifiable)
-                                  .order(created_at: :desc)
-                                  .limit(30)
-    reply_notifiables = @notifications.map(&:notifiable).grep(Reply)
+    all_notifications = current_user.notifications
+                                    .includes(:actor, :notifiable)
+                                    .order(created_at: :desc)
+                                    .limit(30)
+
+    reply_notifiables = all_notifications.map(&:notifiable).grep(Reply)
     ActiveRecord::Associations::Preloader.new(records: reply_notifiables, associations: :post).call if reply_notifiables.any?
-    @unread_count  = current_user.notifications.unread.count
+
+    @notifications = all_notifications.reject { |n| n.target_post.nil? }
+    @unread_count  = @notifications.count { |n| !n.read? }
   end
 
   def read

@@ -66,4 +66,23 @@ class NotificationsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "a[href=?]", post_path(@post)
   end
+
+  test "GET /notifications excludes orphaned notifications from display and unread count" do
+    # Create a second reply and a notification pointing at it
+    orphan_reply = Reply.create!(post: @post, user: @actor, body: "orphan reply")
+    Notification.create!(user: @user, actor: @actor, notifiable: orphan_reply,
+                          event_type: :reply_to_post)
+    # Raw-delete the reply (bypasses callbacks so the notification becomes orphaned)
+    Reply.where(id: orphan_reply.id).delete_all
+
+    # @user now has 2 DB notifications: @notif (valid) and orphan_notif (notifiable missing)
+    post login_path, params: { email: "nuser@example.com", password: "pass123" }
+    get notifications_path
+    assert_response :success
+
+    # Only the non-orphaned notification should be in @notifications
+    assert_equal 1, assigns(:notifications).size
+    # Unread count must match the visible set, not the raw DB count
+    assert_equal 1, assigns(:unread_count)
+  end
 end
