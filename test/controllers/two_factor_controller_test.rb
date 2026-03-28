@@ -49,4 +49,86 @@ class TwoFactorControllerTest < ActionDispatch::IntegrationTest
     get setup_two_factor_path
     assert_redirected_to login_path
   end
+
+  # ─── login flow with 2FA ─────────────────────────────────────────────────────
+
+  test "login redirects to verify page when user has 2FA enabled" do
+    secret = ROTP::Base32.random
+    @user.update!(totp_secret: secret)
+
+    delete logout_path
+    post login_path, params: { email: @user.email, password: "password123" }
+
+    assert_redirected_to verify_two_factor_path
+    assert_nil session[:user_id]
+    assert_equal @user.id, session[:awaiting_2fa]
+  end
+
+  test "POST /two_factor/verify with valid TOTP code completes login" do
+    secret = ROTP::Base32.random
+    @user.update!(totp_secret: secret)
+    delete logout_path
+    post login_path, params: { email: @user.email, password: "password123" }
+
+    valid_code = ROTP::TOTP.new(secret).now
+    post verify_two_factor_path, params: { code: valid_code }
+
+    assert_redirected_to root_path
+    assert_equal @user.id, session[:user_id]
+    assert_nil session[:awaiting_2fa]
+  end
+
+  test "POST /two_factor/verify with invalid TOTP code increments throttle and re-renders" do
+    secret = ROTP::Base32.random
+    @user.update!(totp_secret: secret)
+    delete logout_path
+    post login_path, params: { email: @user.email, password: "password123" }
+
+    post verify_two_factor_path, params: { code: "000000" }
+
+    assert_response :unprocessable_entity
+    assert_nil session[:user_id]
+  end
+
+  test "POST /two_factor/verify with valid backup code completes login and marks code used" do
+    secret = ROTP::Base32.random
+    @user.update!(totp_secret: secret)
+    delete logout_path
+    plaintext = BackupCode.generate_for(@user)
+    post login_path, params: { email: @user.email, password: "password123" }
+
+    post verify_two_factor_path, params: { code: plaintext.first }
+
+    assert_redirected_to root_path
+    assert_equal @user.id, session[:user_id]
+    used = @user.backup_codes.find { |bc| BCrypt::Password.new(bc.digest) == plaintext.first }
+    assert_not_nil used&.used_at
+  end
+
+  test "POST /two_factor/verify with already-used backup code is rejected" do
+    secret = ROTP::Base32.random
+    @user.update!(totp_secret: secret)
+    delete logout_path
+    plaintext = BackupCode.generate_for(@user)
+    post login_path, params: { email: @user.email, password: "password123" }
+    post verify_two_factor_path, params: { code: plaintext.first }
+
+    delete logout_path
+    post login_path, params: { email: @user.email, password: "password123" }
+    post verify_two_factor_path, params: { code: plaintext.first }
+
+    assert_response :unprocessable_entity
+  end
+
+  test "POST /two_factor/verify when throttled returns 429" do
+    secret = ROTP::Base32.random
+    @user.update!(totp_secret: secret)
+    delete logout_path
+    post login_path, params: { email: @user.email, password: "password123" }
+
+    5.times { post verify_two_factor_path, params: { code: "000000" } }
+    post verify_two_factor_path, params: { code: "000000" }
+
+    assert_response :too_many_requests
+  end
 end

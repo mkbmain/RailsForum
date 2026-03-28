@@ -1,0 +1,21 @@
+<div class="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-stone-800 dark:border dark:border-stone-700 rounded-lg shadow">
+  <h1 class="text-2xl font-bold mb-2 dark:text-stone-100">Two-factor authentication</h1>
+  <p class="text-sm text-stone-600 dark:text-stone-400 mb-6">
+    Enter the 6-digit code from your authenticator app, or one of your backup codes.
+  </p>
+
+  <%= form_with url: verify_two_factor_path, method: :post, class: "space-y-4" do |f| %>
+    <div>
+      <%= f.label :code, "Authentication code", class: "block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" %>
+      <%= f.text_field :code, autocomplete: "one-time-code", inputmode: "numeric",
+            autofocus: true, placeholder: "000000",
+            class: "w-full border border-stone-300 dark:border-stone-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 tracking-widest text-center text-lg" %>
+    </div>
+    <%= f.submit "Verify",
+          class: "w-full bg-teal-700 text-white py-2 px-4 rounded-md hover:bg-teal-600 font-semibold" %>
+  <% end %>
+
+  <p class="mt-4 text-center text-sm text-stone-500 dark:text-stone-400">
+    <%= link_to "Cancel and return to login", login_path, class: "text-teal-600 hover:underline" %>
+  </p>
+</div>

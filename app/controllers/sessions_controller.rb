@@ -14,10 +14,16 @@ class SessionsController < ApplicationController
 
     user = User.find_by(email: params[:email].to_s.downcase)
     if user&.authenticate(params[:password])
-      throttle.clear!
-      reset_session
-      session[:user_id] = user.id
-      redirect_to root_path, notice: "Welcome back, #{user.name}!"
+      if user.totp_enabled?
+        reset_session
+        session[:awaiting_2fa] = user.id
+        redirect_to verify_two_factor_path
+      else
+        throttle.clear!
+        reset_session
+        session[:user_id] = user.id
+        redirect_to root_path, notice: "Welcome back, #{user.name}!"
+      end
     else
       throttle.record_failure!
       flash.now[:alert] = "Invalid email or password."
@@ -26,7 +32,7 @@ class SessionsController < ApplicationController
   end
 
   def destroy
-    session.delete(:user_id)
+    reset_session
     redirect_to root_path, notice: "Logged out."
   end
 end
