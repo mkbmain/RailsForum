@@ -11,6 +11,8 @@ class User < ApplicationRecord
   has_many :roles, through: :user_roles
   has_one :password_reset, dependent: :destroy
   has_one :email_verification, dependent: :destroy
+  has_many :backup_codes, dependent: :destroy
+  encrypts :totp_secret
 
   before_save { self.email = email&.downcase&.strip }
   before_validation :sanitize_name
@@ -51,6 +53,10 @@ class User < ApplicationRecord
   def sub_admin? = has_role?(Role::SUB_ADMIN)
   def admin?     = has_role?(Role::ADMIN)
   def moderator? = sub_admin? || admin?
+
+  def totp_enabled?
+    totp_secret.present?
+  end
 
   def mention_handle
     name.gsub(" ", "_").gsub(/[^\w]/, "").downcase
