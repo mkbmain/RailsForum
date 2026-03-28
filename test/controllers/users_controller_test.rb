@@ -1,8 +1,12 @@
 require "test_helper"
 
 class UsersControllerTest < ActionDispatch::IntegrationTest
+  include ActionMailer::TestHelper
+
   setup do
-    Provider.find_or_create_by!(id: 3, name: "internal")
+    ActionMailer::Base.deliveries.clear
+    Provider.find_or_create_by!(id: Provider::INTERNAL, name: "internal")
+    Provider.find_or_create_by!(id: Provider::GOOGLE,   name: "google")
   end
 
   test "GET /signup shows form" do
@@ -151,5 +155,19 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "a", text: "VisiblePost"
     assert_select "a", text: "RemovedPost", count: 0
+  end
+
+  test "POST /signup sends verification email and leaves email_verified_at nil" do
+    assert_emails 1 do
+      post signup_path, params: {
+        user: {
+          email: "newuser@example.com", name: "New User",
+          password: "password123", password_confirmation: "password123"
+        }
+      }
+    end
+    user = User.find_by!(email: "newuser@example.com")
+    assert_nil user.email_verified_at
+    assert_not_nil user.email_verification
   end
 end

@@ -14,7 +14,9 @@ class UsersController < ApplicationController
     if @user.save
       reset_session
       session[:user_id] = @user.id
-      redirect_to root_path, notice: "Welcome, #{@user.name}!"
+      ev = @user.create_email_verification!(last_sent_at: Time.current)
+      UserMailer.verify_email(ev).deliver_later
+      redirect_to root_path, notice: "Welcome, #{@user.name}! Please check your email to verify your address."
     else
       render :new, status: :unprocessable_entity
     end

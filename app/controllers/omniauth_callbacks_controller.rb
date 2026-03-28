@@ -20,6 +20,7 @@ class OmniauthCallbacksController < ApplicationController
     end
 
     user = User.from_omniauth(auth, provider_id)
+    user.update_column(:email_verified_at, Time.current) if user.email_verified_at.nil?
     reset_session
     session[:user_id] = user.id
     redirect_to root_path, notice: "Signed in as #{user.name}."
