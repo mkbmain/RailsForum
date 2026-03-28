@@ -6,7 +6,7 @@
     <title><%= content_for(:title).presence || "Forum" %></title>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-    <script>
+    <script nonce="<%= content_security_policy_nonce %>">
       (function() {
         var theme = localStorage.getItem('theme');
         if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -98,6 +98,17 @@
         </div>
       </div>
     </nav>
+
+    <% if logged_in? && current_user.email_verified_at.nil? %>
+      <div class="max-w-7xl mx-auto px-4 mt-4">
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 text-yellow-800 dark:text-yellow-300 px-4 py-3 rounded-lg text-sm flex items-center justify-between gap-4">
+          <span>Please verify your email address to enable posting.</span>
+          <%= button_to "Resend verification email", resend_email_verifications_path,
+                method: :post,
+                class: "shrink-0 text-yellow-700 dark:text-yellow-300 underline hover:no-underline bg-transparent border-0 p-0 cursor-pointer" %>
+        </div>
+      </div>
+    <% end %>
 
     <% if notice.present? %>
       <div class="max-w-7xl mx-auto px-4 mt-4">
