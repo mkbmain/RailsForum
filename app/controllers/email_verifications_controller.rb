@@ -1,5 +1,5 @@
 class EmailVerificationsController < ApplicationController
-  before_action :require_login, only: [:resend]
+  before_action :require_login, only: [ :resend ]
 
   def show
     ev = EmailVerification.find_by(token: params[:token])

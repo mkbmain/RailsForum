@@ -13,7 +13,7 @@ class UserMailerVerifyEmailTest < ActionMailer::TestCase
 
   test "verify_email sends to user email with correct subject" do
     mail = UserMailer.verify_email(@ev)
-    assert_equal [@user.email], mail.to
+    assert_equal [ @user.email ], mail.to
     assert_equal "Verify your Forum email address", mail.subject
   end
 
