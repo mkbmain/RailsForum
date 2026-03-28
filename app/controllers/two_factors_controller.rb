@@ -1,5 +1,5 @@
 class TwoFactorsController < ApplicationController
-  before_action :require_login, except: [:verify, :confirm_verify]
+  before_action :require_login, except: [ :verify, :confirm_verify ]
 
   def setup
     @secret = session[:pending_totp_secret] ||= ROTP::Base32.random
