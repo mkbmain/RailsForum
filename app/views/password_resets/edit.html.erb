@@ -1,0 +1,32 @@
+<div class="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-stone-800 dark:border dark:border-stone-700 rounded-lg shadow">
+  <h1 class="text-2xl font-bold mb-6 dark:text-stone-100">Choose a new password</h1>
+
+  <% if @error %>
+    <p class="mb-4 text-sm text-red-600 dark:text-red-400"><%= @error %></p>
+  <% end %>
+
+  <% if @reset.user.errors.any? %>
+    <div class="mb-4">
+      <% @reset.user.errors.full_messages.each do |msg| %>
+        <p class="text-sm text-red-600 dark:text-red-400"><%= msg %></p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%= form_with url: password_reset_path(@reset.token), method: :patch, class: "space-y-4" do |f| %>
+    <div>
+      <%= f.label :password, "New password", class: "block text-sm font-medium text-gray-700 dark:text-stone-300" %>
+      <p class="text-xs text-gray-500 dark:text-stone-400 mt-1 mb-1">Minimum 6 characters</p>
+      <%= f.password_field :password, name: "user[password]",
+            class: "mt-1 block w-full border border-gray-300 dark:border-stone-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100",
+            required: true, minlength: 6 %>
+    </div>
+    <div>
+      <%= f.label :password_confirmation, "Confirm new password", class: "block text-sm font-medium text-gray-700 dark:text-stone-300" %>
+      <%= f.password_field :password_confirmation, name: "user[password_confirmation]",
+            class: "mt-1 block w-full border border-gray-300 dark:border-stone-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100",
+            required: true %>
+    </div>
+    <%= f.submit "Update password", class: "w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 font-medium" %>
+  <% end %>
+</div>

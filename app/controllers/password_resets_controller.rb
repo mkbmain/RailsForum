@@ -25,8 +25,57 @@ class PasswordResetsController < ApplicationController
   end
 
   def edit
+    @reset = PasswordReset.find_by(token: params[:token])
+
+    if @reset.nil? || @reset.expired?
+      redirect_to new_password_reset_path,
+                  alert: "That reset link is invalid or has expired. Please request a new one."
+      return
+    end
+
+    unless @reset.user.internal?
+      redirect_to login_path,
+                  alert: "Your account uses a social provider to sign in. Please reset your password there."
+      return
+    end
   end
 
   def update
+    @reset = PasswordReset.find_by(token: params[:token])
+
+    if @reset.nil? || @reset.expired?
+      redirect_to new_password_reset_path, alert: "That reset link is invalid or has expired."
+      return
+    end
+
+    unless @reset.user.internal?
+      redirect_to login_path, alert: "Your account uses a social provider. Please reset your password there."
+      return
+    end
+
+    user = @reset.user
+    password = params[:user][:password]
+    confirmation = params[:user][:password_confirmation]
+
+    if password.blank?
+      user.errors.add(:password, "can't be blank")
+      render :edit, status: :unprocessable_entity
+      return
+    end
+
+    if password.present? && confirmation.blank?
+      @error = "Password confirmation can't be blank"
+      render :edit, status: :unprocessable_entity
+      return
+    end
+
+    if user.update(password: password, password_confirmation: confirmation)
+      @reset.destroy
+      reset_session
+      session[:user_id] = user.id
+      redirect_to root_path, notice: "Password updated. You're now logged in."
+    else
+      render :edit, status: :unprocessable_entity
+    end
   end
 end
