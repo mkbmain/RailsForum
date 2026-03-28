@@ -98,6 +98,38 @@ ALTER SEQUENCE public.content_types_id_seq OWNED BY public.content_types.id;
 
 
 --
+-- Name: email_verifications; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.email_verifications (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    token character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    last_sent_at timestamp(6) without time zone
+);
+
+
+--
+-- Name: email_verifications_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.email_verifications_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: email_verifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.email_verifications_id_seq OWNED BY public.email_verifications.id;
+
+
+--
 -- Name: flags; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -424,7 +456,8 @@ CREATE TABLE public.users (
     uid character varying,
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
-    bio text
+    bio text,
+    email_verified_at timestamp(6) without time zone
 );
 
 
@@ -459,6 +492,13 @@ ALTER TABLE ONLY public.ban_reasons ALTER COLUMN id SET DEFAULT nextval('public.
 --
 
 ALTER TABLE ONLY public.content_types ALTER COLUMN id SET DEFAULT nextval('public.content_types_id_seq'::regclass);
+
+
+--
+-- Name: email_verifications id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_verifications ALTER COLUMN id SET DEFAULT nextval('public.email_verifications_id_seq'::regclass);
 
 
 --
@@ -565,6 +605,14 @@ ALTER TABLE ONLY public.content_types
 
 
 --
+-- Name: email_verifications email_verifications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_verifications
+    ADD CONSTRAINT email_verifications_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: flags flags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -665,6 +713,20 @@ ALTER TABLE ONLY public.users
 --
 
 CREATE UNIQUE INDEX index_ban_reasons_on_name ON public.ban_reasons USING btree (name);
+
+
+--
+-- Name: index_email_verifications_on_token; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_email_verifications_on_token ON public.email_verifications USING btree (token);
+
+
+--
+-- Name: index_email_verifications_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_email_verifications_on_user_id ON public.email_verifications USING btree (user_id);
 
 
 --
@@ -990,6 +1052,14 @@ ALTER TABLE ONLY public.user_bans
 
 
 --
+-- Name: email_verifications fk_rails_bd5a6564f8; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.email_verifications
+    ADD CONSTRAINT fk_rails_bd5a6564f8 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_bans fk_rails_c15024a086; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1036,6 +1106,8 @@ ALTER TABLE ONLY public.user_bans
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260329000002'),
+('20260329000001'),
 ('20260328012156'),
 ('20260323163655'),
 ('20260322035311'),
