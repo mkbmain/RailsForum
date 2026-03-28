@@ -36,7 +36,7 @@ class PasswordResetsController < ApplicationController
     unless @reset.user.internal?
       redirect_to login_path,
                   alert: "Your account uses a social provider to sign in. Please reset your password there."
-      return
+      nil
     end
   end
 

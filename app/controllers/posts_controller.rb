@@ -114,7 +114,7 @@ class PostsController < ApplicationController
       return redirect_to(@post, alert: "This content has been removed and can no longer be edited.")
     end
     unless @post.user == current_user
-      return redirect_to(@post, alert: "Not authorized to edit this post.")
+      redirect_to(@post, alert: "Not authorized to edit this post.")
     end
   end
 
