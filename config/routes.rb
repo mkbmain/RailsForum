@@ -7,6 +7,7 @@ Rails.application.routes.draw do
   delete "/logout", to: "sessions#destroy", as: :logout
   get  "/signup",  to: "users#new",        as: :signup
   post "/signup",  to: "users#create"
+  resources :password_resets, only: [ :new, :create, :edit, :update ], param: :token
 
   # OAuth callbacks
   get "/auth/:provider/callback", to: "omniauth_callbacks#handle"
