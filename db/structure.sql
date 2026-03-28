@@ -171,6 +171,38 @@ ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
 
 
 --
+-- Name: password_resets; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.password_resets (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    token character varying NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    last_sent_at timestamp(6) without time zone
+);
+
+
+--
+-- Name: password_resets_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.password_resets_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: password_resets_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.password_resets_id_seq OWNED BY public.password_resets.id;
+
+
+--
 -- Name: posts; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -444,6 +476,13 @@ ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: password_resets id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.password_resets ALTER COLUMN id SET DEFAULT nextval('public.password_resets_id_seq'::regclass);
+
+
+--
 -- Name: posts id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -539,6 +578,14 @@ ALTER TABLE ONLY public.flags
 
 ALTER TABLE ONLY public.notifications
     ADD CONSTRAINT notifications_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: password_resets password_resets_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.password_resets
+    ADD CONSTRAINT password_resets_pkey PRIMARY KEY (id);
 
 
 --
@@ -674,6 +721,20 @@ CREATE INDEX index_notifications_on_user_id ON public.notifications USING btree 
 --
 
 CREATE INDEX index_notifications_on_user_id_unread ON public.notifications USING btree (user_id) WHERE (read_at IS NULL);
+
+
+--
+-- Name: index_password_resets_on_token; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_password_resets_on_token ON public.password_resets USING btree (token);
+
+
+--
+-- Name: index_password_resets_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_password_resets_on_user_id ON public.password_resets USING btree (user_id);
 
 
 --
@@ -873,6 +934,14 @@ ALTER TABLE ONLY public.posts
 
 
 --
+-- Name: password_resets fk_rails_526379cd99; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.password_resets
+    ADD CONSTRAINT fk_rails_526379cd99 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: posts fk_rails_5b5ddfd518; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -967,6 +1036,7 @@ ALTER TABLE ONLY public.user_bans
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260328012156'),
 ('20260323163655'),
 ('20260322035311'),
 ('20260322031927'),
