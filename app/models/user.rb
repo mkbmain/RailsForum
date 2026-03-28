@@ -10,6 +10,7 @@ class User < ApplicationRecord
   has_many :user_roles
   has_many :roles, through: :user_roles
   has_one :password_reset, dependent: :destroy
+  has_one :email_verification, dependent: :destroy
 
   before_save { self.email = email&.downcase&.strip }
   before_validation :sanitize_name
