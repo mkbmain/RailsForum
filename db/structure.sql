@@ -26,6 +26,38 @@ CREATE TABLE public.ar_internal_metadata (
 
 
 --
+-- Name: backup_codes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.backup_codes (
+    id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    digest character varying NOT NULL,
+    used_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: backup_codes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.backup_codes_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: backup_codes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.backup_codes_id_seq OWNED BY public.backup_codes.id;
+
+
+--
 -- Name: ban_reasons; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -457,7 +489,8 @@ CREATE TABLE public.users (
     created_at timestamp(6) without time zone NOT NULL,
     updated_at timestamp(6) without time zone NOT NULL,
     bio text,
-    email_verified_at timestamp(6) without time zone
+    email_verified_at timestamp(6) without time zone,
+    totp_secret character varying
 );
 
 
@@ -478,6 +511,13 @@ CREATE SEQUENCE public.users_id_seq
 --
 
 ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
+
+
+--
+-- Name: backup_codes id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.backup_codes ALTER COLUMN id SET DEFAULT nextval('public.backup_codes_id_seq'::regclass);
 
 
 --
@@ -570,6 +610,14 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 
 ALTER TABLE ONLY public.ar_internal_metadata
     ADD CONSTRAINT ar_internal_metadata_pkey PRIMARY KEY (key);
+
+
+--
+-- Name: backup_codes backup_codes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.backup_codes
+    ADD CONSTRAINT backup_codes_pkey PRIMARY KEY (id);
 
 
 --
@@ -706,6 +754,20 @@ ALTER TABLE ONLY public.user_roles
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: index_backup_codes_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_backup_codes_on_user_id ON public.backup_codes USING btree (user_id);
+
+
+--
+-- Name: index_backup_codes_on_user_id_and_digest; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX index_backup_codes_on_user_id_and_digest ON public.backup_codes USING btree (user_id, digest);
 
 
 --
@@ -1004,6 +1066,14 @@ ALTER TABLE ONLY public.password_resets
 
 
 --
+-- Name: backup_codes fk_rails_556c1feac3; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.backup_codes
+    ADD CONSTRAINT fk_rails_556c1feac3 FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: posts fk_rails_5b5ddfd518; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1106,6 +1176,8 @@ ALTER TABLE ONLY public.user_bans
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260329140325'),
+('20260329140324'),
 ('20260329000002'),
 ('20260329000001'),
 ('20260328012156'),
