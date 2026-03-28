@@ -1,11 +1,13 @@
 class PostsController < ApplicationController
   include RateLimitable
   include Bannable
+  include VerifiedEmail
 
-  before_action :require_login,    only: [ :new, :create, :destroy, :edit, :update, :restore ]
-  before_action :require_moderator, only: [ :destroy, :restore ]
-  before_action :check_not_banned, only: [ :create ]
-  before_action :check_rate_limit, only: [ :create ]
+  before_action :require_login,          only: [ :new, :create, :destroy, :edit, :update, :restore ]
+  before_action :require_verified_email, only: [ :create ]
+  before_action :require_moderator,      only: [ :destroy, :restore ]
+  before_action :check_not_banned,       only: [ :create ]
+  before_action :check_rate_limit,       only: [ :create ]
   before_action :set_post,          only: [ :edit, :update, :restore ]
   before_action :check_ownership, only: [ :edit, :update ]
   before_action :check_edit_window, only: [ :edit, :update ]

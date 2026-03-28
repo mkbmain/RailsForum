@@ -1,8 +1,10 @@
 class RepliesController < ApplicationController
   include RateLimitable
   include Bannable
+  include VerifiedEmail
 
   before_action :require_login
+  before_action :require_verified_email, only: [ :create ]
   before_action :check_not_banned,       only: [ :create, :edit, :update ]
   before_action :check_rate_limit,       only: [ :create ]
   before_action :set_post,               only: [ :create ]

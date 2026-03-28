@@ -6,7 +6,8 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
   setup do
     Provider.find_or_create_by!(id: 3, name: "internal")
     @user = User.create!(email: "u@example.com", name: "User", password: "pass123",
-                         password_confirmation: "pass123", provider_id: 3)
+                         password_confirmation: "pass123", provider_id: 3,
+                         email_verified_at: Time.current)
     @post = Post.create!(user: @user, title: "A Post", body: "Post body")
     @sub_admin = User.create!(email: "sub@example.com", name: "Sub",
                                password: "pass123", password_confirmation: "pass123",

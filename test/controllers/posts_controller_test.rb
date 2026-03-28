@@ -4,7 +4,8 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
   setup do
     Provider.find_or_create_by!(id: 3, name: "internal")
     @user = User.create!(email: "u@example.com", name: "User", password: "pass123",
-                         password_confirmation: "pass123", provider_id: 3)
+                         password_confirmation: "pass123", provider_id: 3,
+                         email_verified_at: Time.current)
     @post = Post.create!(user: @user, title: "Hello World", body: "First post body")
     @sub_admin = User.create!(email: "sub@example.com", name: "Sub",
                                password: "pass123", password_confirmation: "pass123",
@@ -14,6 +15,12 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
                           password: "pass123", password_confirmation: "pass123",
                           provider_id: 3)
     @admin.roles << Role.find_by!(name: Role::ADMIN)
+  end
+
+  test "responses include Content-Security-Policy header" do
+    get posts_path
+    assert response.headers["Content-Security-Policy"].present?,
+           "Expected Content-Security-Policy header to be set"
   end
 
   test "GET /posts lists posts" do
@@ -814,5 +821,37 @@ class PostsControllerTest < ActionDispatch::IntegrationTest
     end
     assert_response :ok
     assert query_count < 28, "Expected <28 queries, got #{query_count} — possible N+1 on reactions"
+  end
+
+  test "POST /posts by unverified user redirects with alert" do
+    unverified = User.create!(
+      email: "unverified@example.com", name: "Unverified",
+      password: "password123", password_confirmation: "password123",
+      provider_id: Provider::INTERNAL
+    )
+    post login_path, params: { email: unverified.email, password: "password123" }
+
+    category = Category.first || Category.create!(name: "General", position: 1)
+    post posts_path, params: { post: { title: "Hello", body: "World", category_id: category.id } }
+
+    assert_redirected_to root_path
+    assert flash[:alert].present?
+    assert_equal 0, Post.where(user: unverified).count
+  end
+
+  test "POST /posts by verified user creates post" do
+    verified = User.create!(
+      email: "verified2@example.com", name: "Verified",
+      password: "password123", password_confirmation: "password123",
+      provider_id: Provider::INTERNAL,
+      email_verified_at: Time.current
+    )
+    post login_path, params: { email: verified.email, password: "password123" }
+
+    category = Category.first || Category.create!(name: "General", position: 1)
+    post posts_path, params: { post: { title: "Hello", body: "World", category_id: category.id } }
+
+    assert_response :redirect
+    assert_not_equal root_path, response.location
   end
 end
