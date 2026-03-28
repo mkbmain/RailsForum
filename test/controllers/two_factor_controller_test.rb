@@ -131,4 +131,59 @@ class TwoFactorControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :too_many_requests
   end
+
+  # ─── disable 2FA ────────────────────────────────────────────────────────────
+
+  test "DELETE /two_factor with correct password disables 2FA and destroys backup codes" do
+    secret = ROTP::Base32.random
+    @user.update!(totp_secret: secret)
+    BackupCode.generate_for(@user)
+
+    delete two_factor_path, params: { current_password: "password123" }
+
+    assert_redirected_to edit_user_path(@user)
+    assert flash[:notice].present?
+    @user.reload
+    assert_not @user.totp_enabled?
+    assert_equal 0, @user.backup_codes.count
+  end
+
+  test "DELETE /two_factor with wrong password redirects with alert and leaves 2FA enabled" do
+    secret = ROTP::Base32.random
+    @user.update!(totp_secret: secret)
+
+    delete two_factor_path, params: { current_password: "wrongpassword" }
+
+    assert_redirected_to edit_user_path(@user)
+    assert flash[:alert].present?
+    assert @user.reload.totp_enabled?
+  end
+
+  # ─── regenerate backup codes ─────────────────────────────────────────────────
+
+  test "POST /two_factor/backup_codes with correct password replaces backup codes" do
+    secret = ROTP::Base32.random
+    @user.update!(totp_secret: secret)
+    BackupCode.generate_for(@user)
+    old_digests = @user.backup_codes.pluck(:digest)
+
+    post backup_codes_two_factor_path, params: { current_password: "password123" }
+
+    assert_response :success
+    assert_template :backup_codes
+    @user.reload
+    assert_equal 8, @user.backup_codes.count
+    assert_not_equal old_digests.sort, @user.backup_codes.pluck(:digest).sort
+  end
+
+  test "POST /two_factor/backup_codes with wrong password redirects with alert" do
+    secret = ROTP::Base32.random
+    @user.update!(totp_secret: secret)
+    BackupCode.generate_for(@user)
+
+    post backup_codes_two_factor_path, params: { current_password: "wrongpassword" }
+
+    assert_redirected_to edit_user_path(@user)
+    assert flash[:alert].present?
+  end
 end
