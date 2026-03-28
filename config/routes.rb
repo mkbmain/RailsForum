@@ -8,6 +8,9 @@ Rails.application.routes.draw do
   get  "/signup",  to: "users#new",        as: :signup
   post "/signup",  to: "users#create"
   resources :password_resets, only: [ :new, :create, :edit, :update ], param: :token
+  resources :email_verifications, only: [:show], param: :token do
+    collection { post :resend }
+  end
 
   # OAuth callbacks
   get "/auth/:provider/callback", to: "omniauth_callbacks#handle"

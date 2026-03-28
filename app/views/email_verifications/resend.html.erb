@@ -1,0 +1,10 @@
+<div class="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-stone-800 dark:border dark:border-stone-700 rounded-lg shadow text-center">
+  <h1 class="text-xl font-bold mb-3 dark:text-stone-100">Verify your email</h1>
+  <p class="text-sm text-stone-600 dark:text-stone-400 mb-6">
+    We sent a verification link to <strong><%= current_user.email %></strong>.
+    Click the link in that email to activate posting.
+  </p>
+  <%= button_to "Resend verification email", resend_email_verifications_path,
+        method: :post,
+        class: "bg-teal-700 text-white px-5 py-2 rounded-lg hover:bg-teal-600 font-semibold" %>
+</div>
