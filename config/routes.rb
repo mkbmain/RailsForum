@@ -11,6 +11,13 @@ Rails.application.routes.draw do
   resources :email_verifications, only: [ :show ], param: :token do
     collection { post :resend }
   end
+  resource :two_factor, only: [:destroy] do
+    get  :setup,        action: :setup
+    post :setup,        action: :confirm_setup
+    get  :verify
+    post :verify,       action: :confirm_verify
+    post :backup_codes, action: :regenerate_backup_codes
+  end
 
   # OAuth callbacks
   get "/auth/:provider/callback", to: "omniauth_callbacks#handle"

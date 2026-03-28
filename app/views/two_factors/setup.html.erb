@@ -1,0 +1,28 @@
+<div class="max-w-md mx-auto mt-8 px-4 pb-12">
+  <div class="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl p-6">
+    <h1 class="text-xl font-bold mb-2 dark:text-stone-100">Enable two-factor authentication</h1>
+    <p class="text-sm text-stone-600 dark:text-stone-400 mb-6">
+      Scan the QR code with your authenticator app (Google Authenticator, Authy, etc.),
+      then enter the 6-digit code to confirm.
+    </p>
+
+    <div class="flex justify-center mb-4">
+      <%= raw @qr_svg %>
+    </div>
+
+    <p class="text-xs text-center text-stone-500 dark:text-stone-400 mb-6 break-all">
+      Can't scan? Enter this key manually: <strong><%= @secret %></strong>
+    </p>
+
+    <%= form_with url: setup_two_factor_path, method: :post, class: "space-y-4" do |f| %>
+      <div>
+        <%= f.label :code, "6-digit code", class: "block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1" %>
+        <%= f.text_field :code, autocomplete: "one-time-code", inputmode: "numeric",
+              maxlength: 6, placeholder: "000000",
+              class: "w-full border border-stone-300 dark:border-stone-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 tracking-widest text-center text-lg" %>
+      </div>
+      <%= f.submit "Enable 2FA",
+            class: "w-full bg-teal-700 text-white py-2 px-4 rounded-md hover:bg-teal-600 font-semibold" %>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,18 @@
+<div class="max-w-md mx-auto mt-8 px-4 pb-12">
+  <div class="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl p-6">
+    <h1 class="text-xl font-bold mb-2 dark:text-stone-100">Save your backup codes</h1>
+    <p class="text-sm text-stone-600 dark:text-stone-400 mb-4">
+      These codes can be used to access your account if you lose your authenticator.
+      <strong>Save them somewhere safe — they won't be shown again.</strong>
+    </p>
+
+    <div class="bg-stone-100 dark:bg-stone-900 rounded-lg p-4 font-mono text-sm grid grid-cols-2 gap-2 mb-6">
+      <% @backup_codes.each do |code| %>
+        <span class="text-center tracking-wider dark:text-stone-200"><%= code %></span>
+      <% end %>
+    </div>
+
+    <%= link_to "Done — go to my profile", edit_user_path(current_user),
+          class: "block text-center bg-teal-700 text-white py-2 px-4 rounded-md hover:bg-teal-600 font-semibold" %>
+  </div>
+</div>
