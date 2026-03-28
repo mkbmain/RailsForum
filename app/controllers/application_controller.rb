@@ -2,7 +2,7 @@ class ApplicationController < ActionController::Base
   include Moderatable
   helper_method :current_user, :logged_in?, :can_moderate?, :unread_notification_count
 
-  before_action :check_session_timeout, if: :logged_in?
+  before_action :check_session_timeout, if: -> { logged_in? || session[:awaiting_2fa].present? }
   after_action  :touch_session
 
   private
@@ -45,7 +45,8 @@ class ApplicationController < ActionController::Base
   end
 
   def touch_session
-    return unless session[:user_id].present? && session_timeout_minutes > 0
+    active = session[:user_id].present? || session[:awaiting_2fa].present?
+    return unless active && session_timeout_minutes > 0
     session[:last_active_at] = Time.current.to_i
   end
 

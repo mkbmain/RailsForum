@@ -57,4 +57,45 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     post login_path, params: { email: "user@example.com", password: "wrong" }
     assert_response :unprocessable_entity  # not :too_many_requests
   end
+
+  test "awaiting_2fa session is timed out after SESSION_TIMEOUT_MINUTES" do
+    skip if SESSION_TIMEOUT_MINUTES == 0
+
+    Provider.find_or_create_by!(id: Provider::INTERNAL, name: "internal")
+    user = User.create!(
+      email: "sess@example.com", name: "Sess User",
+      password: "password123", password_confirmation: "password123",
+      provider_id: Provider::INTERNAL,
+      email_verified_at: Time.current
+    )
+    secret = ROTP::Base32.random
+    user.update!(totp_secret: secret)
+
+    post login_path, params: { email: user.email, password: "password123" }
+    assert_equal user.id, session[:awaiting_2fa]
+
+    travel (SESSION_TIMEOUT_MINUTES + 1).minutes do
+      get verify_two_factor_path
+      assert_redirected_to login_path
+      assert flash[:alert].present?
+      assert_nil session[:awaiting_2fa]
+    end
+  end
+
+  test "awaiting_2fa session touch_session updates last_active_at" do
+    skip if SESSION_TIMEOUT_MINUTES == 0
+
+    Provider.find_or_create_by!(id: Provider::INTERNAL, name: "internal")
+    user = User.create!(
+      email: "sess2@example.com", name: "Sess User 2",
+      password: "password123", password_confirmation: "password123",
+      provider_id: Provider::INTERNAL,
+      email_verified_at: Time.current
+    )
+    secret = ROTP::Base32.random
+    user.update!(totp_secret: secret)
+
+    post login_path, params: { email: user.email, password: "password123" }
+    assert_not_nil session[:last_active_at]
+  end
 end
