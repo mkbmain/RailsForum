@@ -1,0 +1,9 @@
+<p>Hi <%= @user.name %>,</p>
+
+<p>Thanks for signing up for Forum. Please verify your email address by clicking the link below:</p>
+
+<p><%= link_to "Verify my email address", email_verification_url(@verification.token) %></p>
+
+<p>This link expires in 24 hours.</p>
+
+<p>If you didn't create a Forum account, you can safely ignore this email.</p>
