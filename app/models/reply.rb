@@ -10,7 +10,7 @@ class Reply < ApplicationRecord
            class_name: "Flag", foreign_key: :flaggable_id, dependent: :destroy
   has_many :notifications, as: :notifiable, dependent: :destroy
 
-  validates :body, presence: true, length: { maximum: 1000 }
+  validates :body, presence: true, length: { minimum: 2, maximum: 1000 }
 
   def removed? = removed_at.present?
 

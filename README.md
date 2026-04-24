@@ -138,23 +138,11 @@ Or, to create a dedicated `forum` role with a password (recommended for producti
 sudo -u postgres psql -c "CREATE ROLE forum WITH LOGIN PASSWORD 'yourpassword' CREATEDB;"
 ```
 
-If you use a named role, uncomment and fill in the `username` and `password` lines in `config/database.yml`:
-
-```yaml
-development:
-  <<: *default
-  database: forum_development
-  username: forum
-  password: yourpassword
-  host: localhost
-```
-
-For production, **never** put credentials in the file — use an environment variable instead:
+If you use a named role, set the credentials via environment variables (see [Environment Variables](#environment-variables) below):
 
 ```bash
-export DATABASE_URL="postgres://forum:yourpassword@localhost/forum_production"
-# or the app-specific variable:
-export FORUM_DATABASE_PASSWORD="yourpassword"
+DB_USERNAME=forum
+DB_PASSWORD=yourpassword
 ```
 
 ---
@@ -268,16 +256,52 @@ bin/rails test test/models/user_test.rb:42
 ./bin/ci              # Full CI pipeline (lint + security + tests)
 ```
 
-### OAuth Setup (optional)
+### Environment Variables
 
-To enable Google/Microsoft login, set the following environment variables:
+Copy `.env.example` to `.env` and fill in the values before starting the app.
 
-```
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
-MICROSOFT_CLIENT_ID=...
-MICROSOFT_CLIENT_SECRET=...
-```
+#### Application
+
+| Variable | Default | Description |
+|---|---|---|
+| `MAILER_FROM` | `Forum <noreply@example.com>` | Sender address for all outgoing emails |
+| `EDIT_WINDOW_SECONDS` | `3600` | How long (in seconds) users can edit their posts/replies |
+| `SESSION_TIMEOUT_MINUTES` | `2880` | Idle session timeout in minutes (default: 48 hours) |
+
+#### OAuth (optional)
+
+Required only if you want Google/Microsoft login. Leave blank to use email/password auth only.
+
+| Variable | Description |
+|---|---|
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
+| `MICROSOFT_CLIENT_ID` | Microsoft OAuth client ID |
+| `MICROSOFT_CLIENT_SECRET` | Microsoft OAuth client secret |
+
+#### Database
+
+| Variable | Default | Description |
+|---|---|---|
+| `DB_HOST` | `localhost` | PostgreSQL server hostname |
+| `DB_PORT` | `5432` | PostgreSQL server port |
+| `DB_USERNAME` | `postgres` | PostgreSQL role/user |
+| `DB_PASSWORD` | _(empty)_ | PostgreSQL password — **required in production** |
+| `DB_NAME` | `forum_development` / `forum_test` / `forum_production` | Primary database name (set per environment) |
+| `DB_NAME_CACHE` | `forum_production_cache` | Cache database name (production only) |
+| `DB_NAME_QUEUE` | `forum_production_queue` | Queue database name (production only) |
+| `DB_NAME_CABLE` | `forum_production_cable` | Cable database name (production only) |
+| `DATABASE_URL` | — | Full Postgres connection URL — overrides all `DB_*` vars if set |
+
+#### Infrastructure (optional)
+
+| Variable | Default | Description |
+|---|---|---|
+| `PORT` | `3000` | Port the Puma server listens on |
+| `RAILS_MAX_THREADS` | `3` | Puma thread count |
+| `WEB_CONCURRENCY` | — | Puma worker (process) count |
+| `RAILS_LOG_LEVEL` | `info` | Log level in production (`debug`, `info`, `warn`, `error`) |
+| `SOLID_QUEUE_IN_PUMA` | — | Set to any value to run Solid Queue inside Puma |
 
 ---
 

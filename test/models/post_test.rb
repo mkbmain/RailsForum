@@ -19,9 +19,15 @@ class PostTest < ActiveSupport::TestCase
     assert_includes post.errors[:body], "is too long (maximum is 1000 characters)"
   end
 
-  test "body at 1 character is valid" do
-    post = Post.new(user: @user, title: "Title", body: "a")
+  test "body at 2 characters is valid" do
+    post = Post.new(user: @user, title: "Title", body: "ab")
     assert post.valid?, "Expected valid but got: #{post.errors.full_messages}"
+  end
+
+  test "body at 1 character is invalid" do
+    post = Post.new(user: @user, title: "Title", body: "a")
+    assert_not post.valid?
+    assert_includes post.errors[:body], "is too short (minimum is 2 characters)"
   end
 
   test "last_activity_at returns created_at when no replies" do
@@ -37,24 +43,24 @@ class PostTest < ActiveSupport::TestCase
   end
 
   test "removed? returns false when removed_at is nil" do
-    post = Post.create!(user: @user, title: "T", body: "B")
+    post = Post.create!(user: @user, title: "T", body: "Bo")
     assert_not post.removed?
   end
 
   test "removed? returns true when removed_at is set" do
-    post = Post.create!(user: @user, title: "T", body: "B")
+    post = Post.create!(user: @user, title: "T", body: "Bo")
     post.update_column(:removed_at, Time.current)
     assert post.removed?
   end
 
   test "visible scope excludes removed posts" do
-    post = Post.create!(user: @user, title: "T", body: "B")
+    post = Post.create!(user: @user, title: "T", body: "Bo")
     post.update_column(:removed_at, Time.current)
     assert_not_includes Post.visible, post
   end
 
   test "visible scope includes non-removed posts" do
-    post = Post.create!(user: @user, title: "T", body: "B")
+    post = Post.create!(user: @user, title: "T", body: "Bo")
     assert_includes Post.visible, post
   end
 

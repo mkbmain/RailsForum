@@ -20,9 +20,15 @@ class ReplyTest < ActiveSupport::TestCase
     assert_includes reply.errors[:body], "is too long (maximum is 1000 characters)"
   end
 
-  test "body at 1 character is valid" do
-    reply = Reply.new(post: @post, user: @user, body: "a")
+  test "body at 2 characters is valid" do
+    reply = Reply.new(post: @post, user: @user, body: "ab")
     assert reply.valid?, "Expected valid but got: #{reply.errors.full_messages}"
+  end
+
+  test "body at 1 character is invalid" do
+    reply = Reply.new(post: @post, user: @user, body: "a")
+    assert_not reply.valid?
+    assert_includes reply.errors[:body], "is too short (minimum is 2 characters)"
   end
 
   test "creating a reply sets post last_replied_at" do

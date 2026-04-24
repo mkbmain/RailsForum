@@ -96,6 +96,22 @@ class FlagsControllerTest < ActionDispatch::IntegrationTest
     assert_includes flash[:alert], "Content not found"
   end
 
+  # --- Rate limiting ---
+
+  test "rate limits flag creation after 20 flags in an hour" do
+    Rails.cache.clear
+    post login_path, params: { email: "u@example.com", password: "pass123" }
+
+    20.times do |i|
+      flaggable = Post.create!(user: @other, title: "Post #{i}", body: "Body")
+      post post_flags_path(flaggable), params: { flag: { reason: "spam" } }
+    end
+
+    extra = Post.create!(user: @other, title: "Extra", body: "Body")
+    post post_flags_path(extra), params: { flag: { reason: "spam" } }
+    assert_response :too_many_requests
+  end
+
   # --- User can flag their own content ---
 
   test "user can flag their own post" do

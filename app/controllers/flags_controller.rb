@@ -1,4 +1,5 @@
 class FlagsController < ApplicationController
+  rate_limit to: 20, within: 1.hour, by: -> { current_user&.id }
   before_action :require_login
 
   def create

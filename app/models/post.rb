@@ -13,7 +13,7 @@ class Post < ApplicationRecord
   attribute :category_id, :integer, default: 1
 
   validates :title, presence: true, length: { maximum: 200 }
-  validates :body, presence: true, length: { maximum: 1000 }
+  validates :body, presence: true, length: { minimum: 2, maximum: 1000 }
 
   after_create_commit { update_column(:last_edited_at, created_at) }
 
