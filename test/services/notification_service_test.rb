@@ -177,11 +177,11 @@ class NotificationServiceTest < ActiveSupport::TestCase
       original_create.call(*args, **kwargs)
     end
 
+    before_count = Notification.count
     assert_raises(ActiveRecord::RecordInvalid) do
       NotificationService.reply_created(@reply, current_user: @replier)
     end
-
-    assert_equal 0, Notification.count, "transaction must roll back all notifications"
+    assert_equal before_count, Notification.count, "transaction must roll back all notifications"
   ensure
     Notification.define_singleton_method(:create!, original_create)
   end
@@ -198,5 +198,15 @@ class NotificationServiceTest < ActiveSupport::TestCase
     end
     n = Notification.find_by(user: mentioned, event_type: :mention)
     assert_not_nil n
+  end
+
+  test "does not notify user mentioned inside a tilde-fenced code block" do
+    User.create!(email: "tildementor@example.com", name: "tildementor",
+                 password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    reply = Reply.create!(post: @post, user: @replier,
+                          body: "~~~\n@tildementor\n~~~")
+    assert_no_difference "Notification.where(event_type: :mention).count" do
+      NotificationService.reply_created(reply, current_user: @replier)
+    end
   end
 end
