@@ -61,6 +61,7 @@ class RepliesController < ApplicationController
       broadcast_reply_soft_deleted
       redirect_to @post, notice: "Reply removed."
     elsif @reply.user == current_user
+      return redirect_to @post, notice: "Reply already removed." if @reply.removed?
       @reply.update!(removed_at: Time.current, removed_by: current_user)
       @post.update_column(:last_replied_at, @post.replies.visible.maximum(:created_at))
       broadcast_reply_soft_deleted
@@ -147,14 +148,6 @@ class RepliesController < ApplicationController
       target: "reply-#{@reply.id}",
       partial: "replies/reply",
       locals: { reply: @reply, post: @post, flagged_reply_ids: Set.new }
-    )
-    broadcast_reply_count
-  end
-
-  def broadcast_reply_hard_deleted
-    Turbo::StreamsChannel.broadcast_remove_to(
-      [ @post, :replies ],
-      target: "reply-#{@reply.id}"
     )
     broadcast_reply_count
   end

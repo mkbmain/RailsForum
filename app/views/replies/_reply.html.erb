@@ -15,7 +15,7 @@
     <% end %>
   </div>
   <% if reply.removed? %>
-    <p class="text-gray-400 dark:text-stone-500 italic">[removed by moderator]</p>
+    <p class="text-gray-400 dark:text-stone-500 italic"><%= reply.removed_by == reply.user ? "[deleted]" : "[removed by moderator]" %></p>
     <% if logged_in? && current_user.moderator? %>
       <p class="text-xs text-gray-400 dark:text-stone-500 mt-1">
         Removed by <%= reply.removed_by.name %> on <%= reply.removed_at.strftime("%B %-d, %Y") %>
