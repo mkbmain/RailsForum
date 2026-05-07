@@ -143,8 +143,8 @@ class NotificationServiceTest < ActiveSupport::TestCase
   end
 
   test "does not notify user mentioned inside a fenced code block" do
-    mentioned = User.create!(email: "codementor@example.com", name: "codementor",
-                             password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    User.create!(email: "codementor@example.com", name: "codementor",
+                 password: "pass123", password_confirmation: "pass123", provider_id: 3)
     reply_with_code = Reply.create!(
       post: @post, user: @replier,
       body: "here is an example:\n```\n@codementor does this\n```\nnot a real mention"
@@ -155,8 +155,8 @@ class NotificationServiceTest < ActiveSupport::TestCase
   end
 
   test "does not notify user mentioned inside an inline code span" do
-    mentioned = User.create!(email: "inlinementor@example.com", name: "inlinementor",
-                             password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    User.create!(email: "inlinementor@example.com", name: "inlinementor",
+                 password: "pass123", password_confirmation: "pass123", provider_id: 3)
     reply_with_inline = Reply.create!(
       post: @post, user: @replier,
       body: "run `@inlinementor` in your shell"

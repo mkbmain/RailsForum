@@ -49,6 +49,7 @@ class NotificationService
     # 3. mention — parse @username patterns (skip code blocks and inline code)
     body_without_code = reply.body
       .gsub(/```.*?```/m, "")
+      .gsub(/~~~.*?~~~/m, "")
       .gsub(/`[^`]*`/, "")
     body_without_code.scan(/@(\w+)/i).flatten.uniq.each do |username|
       mentioned = User.find_by_mention_handle(username)
