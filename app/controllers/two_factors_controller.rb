@@ -31,14 +31,17 @@ class TwoFactorsController < ApplicationController
   def confirm_verify
     redirect_to root_path and return unless session[:awaiting_2fa]
 
-    throttle = LoginThrottle.new(request.remote_ip)
-    if throttle.throttled?
+    user_id       = session[:awaiting_2fa]
+    ip_throttle   = LoginThrottle.new(request.remote_ip)
+    user_throttle = TwoFactorThrottle.new(user_id)
+
+    if ip_throttle.throttled? || user_throttle.throttled?
       flash.now[:alert] = "Too many failed attempts. Please wait before trying again."
       render :verify, status: :too_many_requests
       return
     end
 
-    user = User.find_by(id: session[:awaiting_2fa])
+    user = User.find_by(id: user_id)
     unless user
       reset_session
       redirect_to login_path, alert: "Session expired. Please log in again."
@@ -51,12 +54,14 @@ class TwoFactorsController < ApplicationController
             BackupCode.consume_for(user, submitted)
 
     if valid
-      throttle.clear!
+      ip_throttle.clear!
+      user_throttle.clear!
       reset_session
       session[:user_id] = user.id
       redirect_to root_path, notice: "Welcome back, #{user.name}!"
     else
-      throttle.record_failure!
+      ip_throttle.record_failure!
+      user_throttle.record_failure!
       flash.now[:alert] = "Invalid code."
       render :verify, status: :unprocessable_entity
     end

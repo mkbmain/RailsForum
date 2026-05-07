@@ -132,6 +132,20 @@ class TwoFactorControllerTest < ActionDispatch::IntegrationTest
     assert_response :too_many_requests
   end
 
+  test "confirm_verify is blocked after too many failures for the same user (user throttle)" do
+    secret = ROTP::Base32.random
+    @user.update!(totp_secret: secret)
+    delete logout_path
+    post login_path, params: { email: @user.email, password: "password123" }
+
+    # Exhaust the user-level throttle by recording failures directly
+    throttle = TwoFactorThrottle.new(@user.id)
+    Rails.application.config.x.two_factor_max_attempts.times { throttle.record_failure! }
+
+    post verify_two_factor_path, params: { code: "000000" }
+    assert_response :too_many_requests
+  end
+
   # ─── disable 2FA ────────────────────────────────────────────────────────────
 
   test "DELETE /two_factor with correct password disables 2FA and destroys backup codes" do
