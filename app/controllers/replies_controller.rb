@@ -61,9 +61,9 @@ class RepliesController < ApplicationController
       broadcast_reply_soft_deleted
       redirect_to @post, notice: "Reply removed."
     elsif @reply.user == current_user
-      @reply.destroy
+      @reply.update!(removed_at: Time.current, removed_by: current_user)
       @post.update_column(:last_replied_at, @post.replies.visible.maximum(:created_at))
-      broadcast_reply_hard_deleted
+      broadcast_reply_soft_deleted
       redirect_to @post, notice: "Reply deleted."
     else
       redirect_to @post, alert: "Not authorized.", status: :see_other

@@ -50,13 +50,16 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to login_path
   end
 
-  test "DELETE /posts/:post_id/replies/:id succeeds when owner" do
+  test "DELETE /posts/:post_id/replies/:id soft-deletes when owner" do
     post login_path, params: { email: "u@example.com", password: "pass123" }
     reply = Reply.create!(post: @post, user: @user, body: "My reply")
-    assert_difference "Reply.count", -1 do
+    assert_no_difference "Reply.count" do
       delete post_reply_path(@post, reply)
     end
     assert_redirected_to post_path(@post)
+    reply.reload
+    assert reply.removed?, "reply should be soft-deleted"
+    assert_equal @user, reply.removed_by, "removed_by should be the owner"
   end
 
   test "DELETE /posts/:post_id/replies/:id is forbidden for non-owner" do
@@ -103,10 +106,11 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     post login_path, params: { email: "u@example.com", password: "pass123" }
     reply = Reply.create!(post: @post, user: @user, body: "My reply")
     5.times { |i| Post.create!(user: @user, title: "Spam #{i}", body: "body") }
-    assert_difference "Reply.count", -1 do
+    assert_no_difference "Reply.count" do
       delete post_reply_path(@post, reply)
     end
     assert_redirected_to post_path(@post)
+    assert reply.reload.removed?
   end
 
   # ---- ban enforcement ----
@@ -180,13 +184,15 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     assert_match /Not authorized/, flash[:alert]
   end
 
-  test "DELETE admin's own reply hard-deletes via owner path" do
+  test "DELETE admin's own reply soft-deletes via owner path" do
     reply = Reply.create!(post: @post, user: @admin, body: "Admin reply")
     post login_path, params: { email: "admin@example.com", password: "pass123" }
-    assert_difference "Reply.count", -1 do
+    assert_no_difference "Reply.count" do
       delete post_reply_path(@post, reply)
     end
     assert_redirected_to post_path(@post)
+    assert reply.reload.removed?
+    assert_equal @admin, reply.reload.removed_by
   end
 
   test "DELETE reply as admin targeting another admin's reply is denied" do
@@ -210,7 +216,7 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     assert_nil @post.reload.last_replied_at
   end
 
-  test "DELETE owner hard-delete recalculates post last_replied_at" do
+  test "DELETE owner soft-delete recalculates post last_replied_at" do
     reply = Reply.create!(post: @post, user: @user, body: "Only reply")
     @post.update_column(:last_replied_at, 1.hour.ago)
     post login_path, params: { email: "u@example.com", password: "pass123" }
@@ -218,13 +224,14 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     assert_nil @post.reload.last_replied_at
   end
 
-  test "owner hard-delete still works after moderation path added" do
+  test "owner soft-delete works alongside moderation path" do
     post login_path, params: { email: "u@example.com", password: "pass123" }
     reply = Reply.create!(post: @post, user: @user, body: "My reply")
-    assert_difference "Reply.count", -1 do
+    assert_no_difference "Reply.count" do
       delete post_reply_path(@post, reply)
     end
     assert_redirected_to post_path(@post)
+    assert reply.reload.removed?
   end
 
   test "DELETE /posts/:post_id/replies/:id is unaffected by ban" do
@@ -234,10 +241,11 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     post login_path, params: { email: "u@example.com", password: "pass123" }
     reply = Reply.create!(post: @post, user: @user, body: "My reply")
 
-    assert_difference "Reply.count", -1 do
+    assert_no_difference "Reply.count" do
       delete post_reply_path(@post, reply)
     end
     assert_redirected_to post_path(@post)
+    assert reply.reload.removed?
   end
 
   # ---- edit / update ----
@@ -374,7 +382,7 @@ class RepliesControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "DELETE (owner hard-delete) broadcasts remove + count to replies stream" do
+  test "DELETE (owner soft-delete) broadcasts replace + count to replies stream" do
     post login_path, params: { email: "u@example.com", password: "pass123" }
     reply = Reply.create!(post: @post, user: @user, body: "my reply")
     assert_broadcasts(stream_name_from([ @post, :replies ]), 2) do
