@@ -24,6 +24,7 @@ class User < ApplicationRecord
   validates :name, presence: true
   validates :avatar_url, format: { with: /\Ahttps:\/\/.*\z/i, message: "must be an https URL" },
                          allow_blank: true
+  validates :bio, length: { maximum: 500 }, allow_blank: true
   validates :password, presence: true, if: -> { internal? && new_record? }
   validates :password, length: { minimum: 6, allow_nil: true }, if: :internal?
   validates :password_confirmation, presence: true, if: -> { internal? && new_record? }

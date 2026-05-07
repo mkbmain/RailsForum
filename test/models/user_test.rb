@@ -243,4 +243,26 @@ class UserTest < ActiveSupport::TestCase
       )
     end
   end
+
+  test "bio longer than 500 characters is invalid" do
+    user = User.new(email: "bio@example.com", name: "Bio User",
+                    password: "pass123", password_confirmation: "pass123",
+                    provider_id: 3, bio: "x" * 501)
+    assert_not user.valid?
+    assert_includes user.errors[:bio], "is too long (maximum is 500 characters)"
+  end
+
+  test "bio of exactly 500 characters is valid" do
+    user = User.new(email: "bio2@example.com", name: "Bio User2",
+                    password: "pass123", password_confirmation: "pass123",
+                    provider_id: 3, bio: "x" * 500)
+    assert user.valid?
+  end
+
+  test "blank bio is valid" do
+    user = User.new(email: "bio3@example.com", name: "Bio User3",
+                    password: "pass123", password_confirmation: "pass123",
+                    provider_id: 3, bio: "")
+    assert user.valid?
+  end
 end

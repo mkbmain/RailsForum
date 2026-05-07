@@ -490,7 +490,8 @@ CREATE TABLE public.users (
     updated_at timestamp(6) without time zone NOT NULL,
     bio text,
     email_verified_at timestamp(6) without time zone,
-    totp_secret character varying
+    totp_secret character varying,
+    CONSTRAINT users_bio_max_length CHECK ((char_length(bio) <= 500))
 );
 
 
@@ -1176,6 +1177,7 @@ ALTER TABLE ONLY public.user_bans
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260507175313'),
 ('20260329140325'),
 ('20260329140324'),
 ('20260329000002'),
