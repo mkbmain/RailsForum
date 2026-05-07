@@ -146,6 +146,28 @@ class TwoFactorControllerTest < ActionDispatch::IntegrationTest
     assert_response :too_many_requests
   end
 
+  test "both throttles are cleared after successful 2FA verification" do
+    secret = ROTP::Base32.random
+    @user.update!(totp_secret: secret)
+    delete logout_path
+    post login_path, params: { email: @user.email, password: "password123" }
+
+    # Record some failures against both throttles
+    ip_throttle   = LoginThrottle.new("127.0.0.1")
+    user_throttle = TwoFactorThrottle.new(@user.id)
+    2.times { ip_throttle.record_failure! }
+    2.times { user_throttle.record_failure! }
+
+    # Submit a valid code
+    valid_code = ROTP::TOTP.new(secret).now
+    post verify_two_factor_path, params: { code: valid_code }
+    assert_redirected_to root_path
+
+    # Both throttles must be cleared
+    assert_not LoginThrottle.new("127.0.0.1").throttled?, "IP throttle should be cleared"
+    assert_not TwoFactorThrottle.new(@user.id).throttled?, "User throttle should be cleared"
+  end
+
   # ─── disable 2FA ────────────────────────────────────────────────────────────
 
   test "DELETE /two_factor with correct password disables 2FA and destroys backup codes" do
