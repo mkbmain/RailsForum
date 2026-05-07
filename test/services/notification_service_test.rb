@@ -166,6 +166,26 @@ class NotificationServiceTest < ActiveSupport::TestCase
     end
   end
 
+  test "rolls back all notifications when any creation fails" do
+    # Override Notification.create! to succeed on call 1, raise on call 2
+    original_create = Notification.method(:create!)
+    call_count = 0
+
+    Notification.define_singleton_method(:create!) do |*args, **kwargs|
+      call_count += 1
+      raise ActiveRecord::RecordInvalid.new(Notification.new) if call_count == 2
+      original_create.call(*args, **kwargs)
+    end
+
+    assert_raises(ActiveRecord::RecordInvalid) do
+      NotificationService.reply_created(@reply, current_user: @replier)
+    end
+
+    assert_equal 0, Notification.count, "transaction must roll back all notifications"
+  ensure
+    Notification.define_singleton_method(:create!, original_create)
+  end
+
   test "still notifies user mentioned outside code blocks" do
     mentioned = User.create!(email: "realmentor@example.com", name: "realmentor",
                              password: "pass123", password_confirmation: "pass123", provider_id: 3)
