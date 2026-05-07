@@ -265,4 +265,11 @@ class UserTest < ActiveSupport::TestCase
                     provider_id: 3, bio: "")
     assert user.valid?
   end
+
+  test "nil bio is valid" do
+    user = User.new(email: "bio4@example.com", name: "Bio User4",
+                    password: "pass123", password_confirmation: "pass123",
+                    provider_id: 3, bio: nil)
+    assert user.valid?
+  end
 end
