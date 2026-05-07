@@ -46,8 +46,11 @@ class NotificationService
       already_notified.add(uid)
     end
 
-    # 3. mention — parse @username patterns
-    reply.body.scan(/@(\w+)/i).flatten.uniq.each do |username|
+    # 3. mention — parse @username patterns (skip code blocks and inline code)
+    body_without_code = reply.body
+      .gsub(/```.*?```/m, "")
+      .gsub(/`[^`]*`/, "")
+    body_without_code.scan(/@(\w+)/i).flatten.uniq.each do |username|
       mentioned = User.find_by_mention_handle(username)
       next unless mentioned
       next if mentioned == actor

@@ -141,4 +141,42 @@ class NotificationServiceTest < ActiveSupport::TestCase
       NotificationService.reply_created(mentioning_reply, current_user: @replier)
     end
   end
+
+  test "does not notify user mentioned inside a fenced code block" do
+    mentioned = User.create!(email: "codementor@example.com", name: "codementor",
+                             password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    reply_with_code = Reply.create!(
+      post: @post, user: @replier,
+      body: "here is an example:\n```\n@codementor does this\n```\nnot a real mention"
+    )
+    assert_no_difference "Notification.where(event_type: :mention).count" do
+      NotificationService.reply_created(reply_with_code, current_user: @replier)
+    end
+  end
+
+  test "does not notify user mentioned inside an inline code span" do
+    mentioned = User.create!(email: "inlinementor@example.com", name: "inlinementor",
+                             password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    reply_with_inline = Reply.create!(
+      post: @post, user: @replier,
+      body: "run `@inlinementor` in your shell"
+    )
+    assert_no_difference "Notification.where(event_type: :mention).count" do
+      NotificationService.reply_created(reply_with_inline, current_user: @replier)
+    end
+  end
+
+  test "still notifies user mentioned outside code blocks" do
+    mentioned = User.create!(email: "realmentor@example.com", name: "realmentor",
+                             password: "pass123", password_confirmation: "pass123", provider_id: 3)
+    reply_mixed = Reply.create!(
+      post: @post, user: @replier,
+      body: "hey @realmentor, see this:\n```\n@other_person\n```"
+    )
+    assert_difference "Notification.where(event_type: :mention).count", 1 do
+      NotificationService.reply_created(reply_mixed, current_user: @replier)
+    end
+    n = Notification.find_by(user: mentioned, event_type: :mention)
+    assert_not_nil n
+  end
 end
