@@ -8,6 +8,7 @@ class NotificationService
     actor             = current_user
     post              = reply.post
     already_notified  = Set.new
+    notified_user_ids = []
 
     ActiveRecord::Base.transaction do
       # 1. reply_to_post — notify post owner
@@ -19,6 +20,7 @@ class NotificationService
           event_type: :reply_to_post
         )
         already_notified.add(post.user.id)
+        notified_user_ids << post.user.id
       end
 
       # 2. reply_in_thread — notify prior participants (deduplicated per 24h)
@@ -45,6 +47,7 @@ class NotificationService
           event_type:       :reply_in_thread
         )
         already_notified.add(uid)
+        notified_user_ids << uid
       end
 
       # 3. mention — parse @username patterns (skip code blocks and inline code)
@@ -65,8 +68,11 @@ class NotificationService
           event_type: :mention
         )
         already_notified.add(mentioned.id)
+        notified_user_ids << mentioned.id
       end
     end
+
+    notified_user_ids.each { |uid| Rails.cache.delete("unread_notifs/#{uid}") }
   end
 
   def self.content_removed(content, removed_by:)
@@ -78,5 +84,6 @@ class NotificationService
       notifiable: content,
       event_type: :moderation
     )
+    Rails.cache.delete("unread_notifs/#{content.user.id}")
   end
 end

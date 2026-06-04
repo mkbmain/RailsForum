@@ -6,15 +6,17 @@ class SearchController < ApplicationController
     @page       = [ (params[:page] || 1).to_i, 1 ].max
 
     if @query.present?
-      safe_q = ActiveRecord::Base.sanitize_sql_like(@query)
+      quoted = ActiveRecord::Base.connection.quote(@query)
       posts = Post.visible
                   .includes(:user, :category)
-                  .where("title ILIKE :q OR body ILIKE :q", q: "%#{safe_q}%")
+                  .where("search_vector @@ plainto_tsquery('english', ?)", @query)
 
       category_id = params[:category].to_i
       posts = posts.where(category_id: category_id) if category_id > 0
 
-      posts = posts.order(Arel.sql("COALESCE(last_replied_at, created_at) DESC"))
+      posts = posts.order(Arel.sql(
+        "ts_rank(search_vector, plainto_tsquery('english', #{quoted})) DESC, COALESCE(last_replied_at, created_at) DESC"
+      ))
       @total = posts.count
       @posts = posts.limit(@take + 1).offset((@page - 1) * @take) # +1 probes for a next page; view renders only first(@take)
     else

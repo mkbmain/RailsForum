@@ -8,46 +8,91 @@
     <% end %>
   </div>
 
-  <% if @notifications.empty? %>
+  <% if @notification_groups.empty? %>
     <div class="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl p-8 text-center">
       <p class="text-stone-400 dark:text-stone-500 text-sm">No notifications yet.</p>
     </div>
   <% else %>
     <div class="space-y-2">
-      <% @notifications.each do |n| %>
-        <% anchor = n.notifiable.is_a?(Reply) ? "reply-#{n.notifiable.id}" : nil %>
-        <% post_link = post_path(n.target_post, anchor: anchor) %>
-        <div class="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl p-4 flex items-start gap-3 <%= n.read? ? '' : 'bg-teal-50 dark:bg-teal-900/40 border-teal-200 dark:border-teal-800' %>">
-          <%# Actor avatar %>
-          <% if n.actor.avatar_url.present? %>
-            <%= image_tag n.actor.avatar_url, class: "w-8 h-8 rounded-full shrink-0 mt-0.5", alt: "" %>
-          <% else %>
-            <span class="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 font-semibold flex items-center justify-center text-sm shrink-0 mt-0.5">
-              <%= (n.actor.name.presence || "?").first.upcase %>
-            </span>
-          <% end %>
+      <% @notification_groups.each do |item| %>
+        <% if item[:type] == :group %>
+          <%# Grouped reply_in_thread notifications for one post %>
+          <% group = item %>
+          <% display_actors = group[:actors].first(3) %>
+          <div class="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl p-4 flex items-start gap-3 <%= group[:unread] ? 'bg-teal-50 dark:bg-teal-900/40 border-teal-200 dark:border-teal-800' : '' %>">
+            <% if display_actors.first.avatar_url.present? %>
+              <%= image_tag display_actors.first.avatar_url, class: "w-8 h-8 rounded-full shrink-0 mt-0.5", alt: "" %>
+            <% else %>
+              <span class="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 font-semibold flex items-center justify-center text-sm shrink-0 mt-0.5">
+                <%= (display_actors.first.name.presence || "?").first.upcase %>
+              </span>
+            <% end %>
 
-          <div class="flex-1 min-w-0">
-            <p class="text-sm text-stone-700 dark:text-stone-300">
-              <%= link_to n.actor.name, user_path(n.actor), class: "font-semibold hover:underline" %>
-              <%= case n.event_type
-                  when "reply_to_post"   then "replied to your post"
-                  when "reply_in_thread" then "replied in a thread you participated in"
-                  when "mention"         then "mentioned you"
-                  when "moderation"      then "removed your content"
-                  end %>
-              &mdash;
-              <%= link_to "view", post_link, class: "text-blue-500 hover:underline" %>
-            </p>
-            <p class="text-xs text-stone-400 dark:text-stone-500 mt-0.5"><%= time_ago_in_words(n.created_at) %> ago</p>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-stone-700 dark:text-stone-300">
+                <% names = display_actors.map { |a| link_to a.name, user_path(a), class: "font-semibold hover:underline" } %>
+                <% overflow = group[:ids].size - display_actors.size %>
+                <%= names.join(", ").html_safe %>
+                <% if overflow > 0 %>
+                  and <%= overflow %> <%= "other".pluralize(overflow) %>
+                <% end %>
+                replied in
+                <%= link_to truncate(group[:post].title, length: 60), post_path(group[:post]), class: "font-semibold hover:underline" %>
+              </p>
+              <p class="text-xs text-stone-400 dark:text-stone-500 mt-0.5"><%= time_ago_in_words(group[:created_at]) %> ago</p>
+            </div>
+
+            <% if group[:unread] %>
+              <%= button_to "✓", read_group_notifications_path,
+                    params: { ids: group[:ids] },
+                    method: :patch,
+                    class: "text-xs text-teal-600 hover:text-teal-800 bg-transparent border-0 p-0 cursor-pointer shrink-0",
+                    title: "Mark as read" %>
+            <% end %>
           </div>
+        <% else %>
+          <%# Single notification %>
+          <% n = item[:notification] %>
+          <% anchor = n.notifiable.is_a?(Reply) ? "reply-#{n.notifiable.id}" : nil %>
+          <% post_link = post_path(n.target_post, anchor: anchor) %>
+          <div class="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl p-4 flex items-start gap-3 <%= n.read? ? '' : 'bg-teal-50 dark:bg-teal-900/40 border-teal-200 dark:border-teal-800' %>">
+            <% if n.actor.avatar_url.present? %>
+              <%= image_tag n.actor.avatar_url, class: "w-8 h-8 rounded-full shrink-0 mt-0.5", alt: "" %>
+            <% else %>
+              <span class="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 font-semibold flex items-center justify-center text-sm shrink-0 mt-0.5">
+                <%= (n.actor.name.presence || "?").first.upcase %>
+              </span>
+            <% end %>
 
-          <% unless n.read? %>
-            <%= button_to "✓", read_notification_path(n), method: :patch,
-                  class: "text-xs text-teal-600 hover:text-teal-800 bg-transparent border-0 p-0 cursor-pointer shrink-0",
-                  title: "Mark as read" %>
-          <% end %>
-        </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-stone-700 dark:text-stone-300">
+                <%= link_to n.actor.name, user_path(n.actor), class: "font-semibold hover:underline" %>
+                <%= case n.event_type
+                    when "reply_to_post"
+                      "replied to your post #{link_to truncate(n.target_post.title, length: 50), post_link, class: 'font-semibold hover:underline'}".html_safe
+                    when "mention"
+                      "mentioned you in #{link_to truncate(n.target_post.title, length: 50), post_link, class: 'font-semibold hover:underline'}".html_safe
+                    when "moderation"
+                      if n.notifiable.is_a?(Reply)
+                        "removed your reply in #{link_to truncate(n.target_post.title, length: 50), post_link, class: 'font-semibold hover:underline'}".html_safe
+                      else
+                        "removed your post #{link_to truncate(n.notifiable.title, length: 50), post_link, class: 'font-semibold hover:underline'}".html_safe
+                      end
+                    end %>
+              </p>
+              <% if n.moderation? && n.notifiable.is_a?(Reply) %>
+                <p class="text-xs text-stone-400 dark:text-stone-500 mt-1 italic truncate"><%= truncate(n.notifiable.body, length: 80) %></p>
+              <% end %>
+              <p class="text-xs text-stone-400 dark:text-stone-500 mt-0.5"><%= time_ago_in_words(n.created_at) %> ago</p>
+            </div>
+
+            <% unless n.read? %>
+              <%= button_to "✓", read_notification_path(n), method: :patch,
+                    class: "text-xs text-teal-600 hover:text-teal-800 bg-transparent border-0 p-0 cursor-pointer shrink-0",
+                    title: "Mark as read" %>
+            <% end %>
+          </div>
+        <% end %>
       <% end %>
     </div>
   <% end %>

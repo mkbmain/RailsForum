@@ -1,8 +1,22 @@
 class PasswordResetsController < ApplicationController
+  RESET_RATE_LIMIT   = 5
+  RESET_RATE_WINDOW  = 1.hour
+
   def new
   end
 
   def create
+    ip_key = "pw_reset_attempts:#{request.remote_ip}"
+    attempts = Rails.cache.read(ip_key).to_i
+
+    if attempts >= RESET_RATE_LIMIT
+      redirect_to login_path, notice: "If that email is registered, you'll receive a reset link shortly."
+      return
+    end
+
+    written = Rails.cache.write(ip_key, 1, expires_in: RESET_RATE_WINDOW, unless_exist: true)
+    Rails.cache.increment(ip_key) unless written
+
     email = params[:email].to_s.downcase.strip
     user = User.find_by(email: email)
 

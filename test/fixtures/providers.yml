@@ -1,0 +1,11 @@
+google:
+  id: 1
+  name: google
+
+microsoft:
+  id: 2
+  name: microsoft
+
+internal:
+  id: 3
+  name: internal

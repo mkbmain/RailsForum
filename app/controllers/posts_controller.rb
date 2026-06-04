@@ -33,7 +33,7 @@ class PostsController < ApplicationController
   end
 
   def show
-    @post  = Post.includes(:category, :reactions).find(params[:id])
+    @post  = Post.includes(:user, :category, :reactions).find(params[:id])
     @reply = Reply.new
 
     take = (params[:take] || 20).to_i.clamp(1, 100)
