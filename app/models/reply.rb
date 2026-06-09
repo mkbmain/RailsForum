@@ -19,7 +19,7 @@ class Reply < ApplicationRecord
   end
 
   after_create_commit { update_column(:last_edited_at, created_at) }
-  after_create  :update_post_last_replied_at
+  after_create_commit :update_post_last_replied_at
   after_destroy :recalculate_post_last_replied_at
 
   private

@@ -51,6 +51,29 @@ class NotificationsControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil notif2.reload.read_at
   end
 
+  test "PATCH /notifications/read_group marks specified notifications as read" do
+    reply2 = Reply.create!(post: @post, user: @actor, body: "another reply")
+    notif2 = Notification.create!(user: @user, actor: @actor, notifiable: reply2,
+                                   event_type: :reply_in_thread)
+    post login_path, params: { email: "nuser@example.com", password: "pass123" }
+    patch read_group_notifications_path, params: { ids: [ @notif.id, notif2.id ] }
+    assert_redirected_to notifications_path
+    assert_not_nil @notif.reload.read_at
+    assert_not_nil notif2.reload.read_at
+  end
+
+  test "PATCH /notifications/read_group cannot mark another user's notifications" do
+    other_notif = Notification.create!(
+      user:       @actor,
+      actor:      @user,
+      notifiable: @reply,
+      event_type: :reply_to_post
+    )
+    post login_path, params: { email: "nuser@example.com", password: "pass123" }
+    patch read_group_notifications_path, params: { ids: [ other_notif.id ] }
+    assert_nil other_notif.reload.read_at
+  end
+
   test "GET /notifications reply notification links to post with reply anchor" do
     post login_path, params: { email: "nuser@example.com", password: "pass123" }
     get notifications_path
@@ -67,22 +90,32 @@ class NotificationsControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", post_path(@post)
   end
 
+  test "reply_in_thread notifications for the same post are grouped into one display item" do
+    reply2 = Reply.create!(post: @post, user: @actor, body: "second reply")
+    reply3 = Reply.create!(post: @post, user: @actor, body: "third reply")
+    Notification.create!(user: @user, actor: @actor, notifiable: reply2, event_type: :reply_in_thread)
+    Notification.create!(user: @user, actor: @actor, notifiable: reply3, event_type: :reply_in_thread)
+    post login_path, params: { email: "nuser@example.com", password: "pass123" }
+    get notifications_path
+    assert_response :success
+    groups = assigns(:notification_groups)
+    thread_groups = groups.select { |g| g[:type] == :group }
+    assert_equal 1, thread_groups.size, "Two reply_in_thread for the same post should collapse into one group"
+    assert_equal 2, thread_groups.first[:ids].size
+  end
+
   test "GET /notifications excludes orphaned notifications from display and unread count" do
-    # Create a second reply and a notification pointing at it
     orphan_reply = Reply.create!(post: @post, user: @actor, body: "orphan reply")
     Notification.create!(user: @user, actor: @actor, notifiable: orphan_reply,
                           event_type: :reply_to_post)
-    # Raw-delete the reply (bypasses callbacks so the notification becomes orphaned)
     Reply.where(id: orphan_reply.id).delete_all
 
-    # @user now has 2 DB notifications: @notif (valid) and orphan_notif (notifiable missing)
     post login_path, params: { email: "nuser@example.com", password: "pass123" }
     get notifications_path
     assert_response :success
 
-    # Only the non-orphaned notification should be in @notifications
-    assert_equal 1, assigns(:notifications).size
-    # Unread count must match the visible set, not the raw DB count
+    # Only the non-orphaned notification should appear (as a single-item group)
+    assert_equal 1, assigns(:notification_groups).size
     assert_equal 1, assigns(:unread_count)
   end
 end

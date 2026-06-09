@@ -52,6 +52,13 @@ class ApplicationController < ActionController::Base
 
   def unread_notification_count
     return 0 unless logged_in?
-    @unread_notification_count ||= current_user.notifications.unread.count
+    @unread_notification_count ||= Rails.cache.fetch(
+      "unread_notifs/#{current_user.id}",
+      expires_in: 2.minutes
+    ) { current_user.notifications.unread.count }
+  end
+
+  def bust_notification_cache
+    Rails.cache.delete("unread_notifs/#{current_user.id}") if logged_in?
   end
 end

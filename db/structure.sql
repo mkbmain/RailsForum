@@ -282,6 +282,7 @@ CREATE TABLE public.posts (
     removed_at timestamp(6) without time zone,
     removed_by_id bigint,
     last_edited_at timestamp(6) without time zone DEFAULT now() NOT NULL,
+    search_vector tsvector GENERATED ALWAYS AS (to_tsvector('english'::regconfig, (((COALESCE(title, ''::character varying))::text || ' '::text) || COALESCE(body, ''::text)))) STORED,
     CONSTRAINT posts_body_max_length CHECK ((char_length(body) <= 1000))
 );
 
@@ -884,6 +885,13 @@ CREATE INDEX index_posts_on_removed_at ON public.posts USING btree (removed_at) 
 
 
 --
+-- Name: index_posts_on_search_vector; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_posts_on_search_vector ON public.posts USING gin (search_vector);
+
+
+--
 -- Name: index_posts_on_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1177,6 +1185,7 @@ ALTER TABLE ONLY public.user_bans
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20260522000001'),
 ('20260507175313'),
 ('20260329140325'),
 ('20260329140324'),

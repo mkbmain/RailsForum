@@ -8,7 +8,7 @@ class RepliesController < ApplicationController
   before_action :check_not_banned,       only: [ :create, :edit, :update ]
   before_action :check_rate_limit,       only: [ :create ]
   before_action :set_post,               only: [ :create ]
-  before_action :set_reply,              only: [ :edit, :update, :restore ]
+  before_action :set_reply,              only: [ :edit, :update, :restore, :destroy ]
   before_action :require_moderator,      only: [ :restore ]
   before_action :check_post_not_removed, only: [ :create, :edit, :update ]
   before_action :check_ownership,        only: [ :edit, :update ]
@@ -51,9 +51,6 @@ class RepliesController < ApplicationController
   end
 
   def destroy
-    @post  = Post.find(params[:post_id])
-    @reply = @post.replies.find(params[:id])
-
     if current_user.moderator? && can_moderate?(@reply.user)
       @reply.update!(removed_at: Time.current, removed_by: current_user)
       @post.update_column(:last_replied_at, @post.replies.visible.maximum(:created_at))
@@ -124,6 +121,8 @@ class RepliesController < ApplicationController
   end
 
   def broadcast_reply_updated
+    # flagged_reply_ids cannot be per-subscriber with server-sent Turbo Streams,
+    # so viewers who flagged this reply will see the flag button reset until they reload.
     Turbo::StreamsChannel.broadcast_replace_to(
       [ @post, :replies ],
       target: "reply-#{@reply.id}",
