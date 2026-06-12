@@ -38,12 +38,12 @@
       <% if logged_in? && reply.user == current_user && !reply.removed? %>
         <%= button_to "Delete", post_reply_path(post, reply), method: :delete,
               class: "text-xs text-gray-400 dark:text-stone-500 hover:text-red-500 bg-transparent border-0 p-0 cursor-pointer",
-              data: { confirm: "Delete this reply? This cannot be undone." } %>
+              data: { turbo_confirm: "Delete this reply? This cannot be undone." } %>
       <% end %>
       <% if logged_in? && can_moderate?(reply.user) && !reply.removed? %>
         <%= button_to "Remove", post_reply_path(post, reply), method: :delete,
               class: "text-xs text-red-600 hover:underline bg-transparent border-0 p-0 cursor-pointer",
-              data: { confirm: "Remove this reply?" } %>
+              data: { turbo_confirm: "Remove this reply?" } %>
         <%= link_to "Ban User", new_user_ban_path(user_id: reply.user_id),
               class: "text-xs text-orange-600 hover:underline" %>
       <% end %>

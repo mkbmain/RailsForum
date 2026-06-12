@@ -1,10 +1,6 @@
 <div class="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-stone-800 dark:border dark:border-stone-700 rounded-lg shadow">
   <h1 class="text-2xl font-bold mb-6 dark:text-stone-100">Choose a new password</h1>
 
-  <% if @error %>
-    <p class="mb-4 text-sm text-red-600 dark:text-red-400"><%= @error %></p>
-  <% end %>
-
   <% if @reset.user.errors.any? %>
     <div class="mb-4">
       <% @reset.user.errors.full_messages.each do |msg| %>

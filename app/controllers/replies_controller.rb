@@ -17,7 +17,7 @@ class RepliesController < ApplicationController
   def create
     @reply = @post.replies.build(reply_params.merge(user: current_user))
     if @reply.save
-      NotificationService.reply_created(@reply, current_user: current_user)
+      NotificationJob.perform_later(@reply.id, current_user.id)
       broadcast_reply_created
       redirect_to @post, notice: "Reply posted!"
     else
@@ -44,6 +44,10 @@ class RepliesController < ApplicationController
   end
 
   def restore
+    unless can_moderate?(@reply.user)
+      redirect_to @post, alert: "Not authorized to restore this reply."
+      return
+    end
     @reply.update!(removed_at: nil, removed_by: nil)
     @post.update_column(:last_replied_at, @post.replies.visible.maximum(:created_at))
     broadcast_reply_restored

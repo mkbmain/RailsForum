@@ -38,16 +38,16 @@ class NotificationService
                            .distinct
                            .pluck(:user_id)
 
-      participant_ids.each do |uid|
-        Notification.create!(
-          user_id:          uid,
-          actor_id:         actor.id,
-          notifiable_type:  "Reply",
-          notifiable_id:    reply.id,
-          event_type:       :reply_in_thread
-        )
-        already_notified.add(uid)
-        notified_user_ids << uid
+      unless participant_ids.empty?
+        now = Time.current
+        event_int = Notification.event_types[:reply_in_thread]
+        rows = participant_ids.map do |uid|
+          { user_id: uid, actor_id: actor.id, notifiable_type: "Reply", notifiable_id: reply.id,
+            event_type: event_int, created_at: now, updated_at: now }
+        end
+        Notification.insert_all(rows)
+        participant_ids.each { |uid| already_notified.add(uid) }
+        notified_user_ids.concat(participant_ids)
       end
 
       # 3. mention — parse @username patterns (skip code blocks and inline code)

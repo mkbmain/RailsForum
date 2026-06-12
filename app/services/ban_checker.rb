@@ -19,6 +19,7 @@ class BanChecker
 
   def active_ban
     @active_ban ||= @user.user_bans
+                         .includes(:ban_reason)
                          .where("banned_until >= ?", Time.current)
                          .order(banned_until: :desc)
                          .first

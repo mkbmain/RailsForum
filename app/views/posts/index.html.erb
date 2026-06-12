@@ -52,7 +52,7 @@
                 <% if post.removed? %>
                   <span class="italic">[removed by moderator]</span>
                 <% else %>
-                  <%= truncate(strip_tags(post.body), length: 200) %>
+                  <%= truncate(strip_tags(render_markdown(post.body)), length: 200) %>
                 <% end %>
               </p>
 

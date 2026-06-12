@@ -101,6 +101,10 @@ class PostsController < ApplicationController
   end
 
   def restore
+    unless can_moderate?(@post.user)
+      redirect_to @post, alert: "Not authorized to restore this post."
+      return
+    end
     @post.update!(removed_at: nil, removed_by: nil)
     redirect_to @post, notice: "Post restored."
   end

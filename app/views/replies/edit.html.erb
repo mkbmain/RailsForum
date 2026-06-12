@@ -26,12 +26,12 @@
                   data-action="click->markdown-preview#showPreview"
                   class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:text-stone-400 dark:hover:text-stone-200">Preview</button>
         </div>
-        <%= f.text_area :body, rows: 6,
+        <%= f.text_area :body, rows: 6, maxlength: 1000,
               class: "block w-full border border-gray-300 dark:border-stone-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100",
               data: { markdown_preview_target: "textarea" } %>
         <div data-markdown-preview-target="preview"
              class="hidden w-full border border-gray-300 dark:border-stone-600 rounded-md px-3 py-2 text-gray-800 dark:text-stone-200 prose prose-sm max-w-none"></div>
-        <p class="text-xs text-gray-400 dark:text-stone-500 mt-1">Markdown supported — **bold**, _italic_, `code`, fenced code blocks</p>
+        <p class="text-xs text-gray-400 dark:text-stone-500 mt-1">Markdown supported — **bold**, _italic_, `code`, fenced code blocks · 1000 character limit</p>
       </div>
     </div>
     <div class="flex gap-3">

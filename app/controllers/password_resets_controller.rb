@@ -68,22 +68,8 @@ class PasswordResetsController < ApplicationController
     end
 
     user = @reset.user
-    password = params[:user][:password]
-    confirmation = params[:user][:password_confirmation]
 
-    if password.blank?
-      user.errors.add(:password, "can't be blank")
-      render :edit, status: :unprocessable_entity
-      return
-    end
-
-    if password.present? && confirmation.blank?
-      @error = "Password confirmation can't be blank"
-      render :edit, status: :unprocessable_entity
-      return
-    end
-
-    if user.update(password: password, password_confirmation: confirmation)
+    if user.update(params.require(:user).permit(:password, :password_confirmation))
       @reset.destroy
       reset_session
       session[:user_id] = user.id

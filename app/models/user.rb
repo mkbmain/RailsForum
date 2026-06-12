@@ -47,7 +47,7 @@ class User < ApplicationRecord
   end
 
   def has_role?(name)
-    roles.exists?(name: name)
+    roles.loaded? ? roles.any? { |r| r.name == name } : roles.exists?(name: name)
   end
 
   def creator?   = has_role?(Role::CREATOR)

@@ -1,34 +1,34 @@
 <%# app/views/admin/users/show.html.erb %>
 <% content_for :title, "#{@user.name} – Admin Panel" %>
 
-<nav class="text-sm text-gray-500 mb-4">
-  <%= link_to "Users", admin_users_path, class: "hover:text-teal-700" %> /
-  <span class="text-gray-900"><%= @user.name %></span>
+<nav class="text-sm text-gray-500 dark:text-stone-400 mb-4">
+  <%= link_to "Users", admin_users_path, class: "hover:text-teal-700 dark:hover:text-teal-400" %> /
+  <span class="text-gray-900 dark:text-stone-100"><%= @user.name %></span>
 </nav>
 
 <%# Header %>
-<div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6 mb-6">
+<div class="bg-white dark:bg-stone-800 rounded-xl shadow-sm border border-stone-200 dark:border-stone-700 p-6 mb-6">
   <div class="flex items-start justify-between gap-4">
     <div class="flex items-center gap-4">
       <% if @user.avatar_url.present? %>
         <%= image_tag @user.avatar_url, class: "w-16 h-16 rounded-full", alt: "" %>
       <% else %>
-        <span class="w-16 h-16 rounded-full bg-teal-100 text-teal-700 font-bold text-2xl flex items-center justify-center">
+        <span class="w-16 h-16 rounded-full bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 font-bold text-2xl flex items-center justify-center">
           <%= (@user.name.presence || "?").first.upcase %>
         </span>
       <% end %>
       <div>
-        <h1 class="text-xl font-bold text-gray-900"><%= @user.name %></h1>
-        <div class="text-sm text-gray-500"><%= @user.email %></div>
+        <h1 class="text-xl font-bold text-gray-900 dark:text-stone-100"><%= @user.name %></h1>
+        <div class="text-sm text-gray-500 dark:text-stone-400"><%= @user.email %></div>
         <div class="flex flex-wrap items-center gap-2 mt-1">
           <% if @user.admin? %>
             <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-800">Admin</span>
           <% elsif @user.sub_admin? %>
             <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">Sub-admin</span>
           <% else %>
-            <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-stone-100 text-stone-600">Creator</span>
+            <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-stone-100 dark:bg-stone-600 text-stone-600 dark:text-stone-300">Creator</span>
           <% end %>
-          <span class="text-xs text-gray-400">Joined <%= @user.created_at.strftime("%b %-d, %Y") %></span>
+          <span class="text-xs text-gray-400 dark:text-stone-500">Joined <%= @user.created_at.strftime("%b %-d, %Y") %></span>
           <% if @active_ban %>
             <span class="text-xs font-medium text-red-600">
               Banned until <%= @active_ban.banned_until.strftime("%b %-d, %H:%M") %>
@@ -56,41 +56,41 @@
 </div>
 
 <%# Tabs %>
-<div class="border-b border-stone-200 mb-6">
+<div class="border-b border-stone-200 dark:border-stone-700 mb-6">
   <nav class="flex gap-1 -mb-px">
     <% [["posts", "Posts"], ["replies", "Replies"], ["bans", "Bans Received"], ["activity", "Moderation Activity"]].each do |key, label| %>
       <% next if key == "activity" && !@has_moderation_history %>
       <%= link_to label, admin_user_path(@user, tab: key),
             class: "px-4 py-2 text-sm font-medium border-b-2 #{
-              @tab == key ? 'border-teal-600 text-teal-700' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              @tab == key ? 'border-teal-600 text-teal-700 dark:text-teal-400 dark:border-teal-400' : 'border-transparent text-gray-500 dark:text-stone-400 hover:text-gray-700 dark:hover:text-stone-200 hover:border-gray-300 dark:hover:border-stone-500'
             }" %>
     <% end %>
   </nav>
 </div>
 
 <%# Tab content %>
-<div class="bg-white rounded-xl shadow-sm border border-stone-200">
+<div class="bg-white dark:bg-stone-800 rounded-xl shadow-sm border border-stone-200 dark:border-stone-700">
   <% case @tab %>
   <% when "posts" %>
     <% if @items.empty? %>
-      <p class="px-5 py-8 text-sm text-gray-500 text-center">No posts.</p>
+      <p class="px-5 py-8 text-sm text-gray-500 dark:text-stone-400 text-center">No posts.</p>
     <% else %>
-      <ul class="divide-y divide-stone-100">
+      <ul class="divide-y divide-stone-100 dark:divide-stone-700">
         <% @items.each do |post| %>
           <li class="px-5 py-4 <%= 'opacity-60' if post.removed? %>">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <% if post.removed? %>
                   <span class="inline-flex px-1.5 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700 mr-2">Removed</span>
-                  <span class="font-medium text-gray-500"><%= post.title %></span>
+                  <span class="font-medium text-gray-500 dark:text-stone-400"><%= post.title %></span>
                 <% else %>
-                  <%= link_to post.title, post_path(post), class: "font-medium text-teal-700 hover:underline", target: "_blank" %>
+                  <%= link_to post.title, post_path(post), class: "font-medium text-teal-700 dark:text-teal-400 hover:underline", target: "_blank", rel: "noopener noreferrer" %>
                 <% end %>
               </div>
-              <span class="text-xs text-gray-400 shrink-0"><%= post.created_at.strftime("%b %-d, %Y") %></span>
+              <span class="text-xs text-gray-400 dark:text-stone-500 shrink-0"><%= post.created_at.strftime("%b %-d, %Y") %></span>
             </div>
             <% if post.removed? %>
-              <div class="text-xs text-gray-400 mt-1">
+              <div class="text-xs text-gray-400 dark:text-stone-500 mt-1">
                 Removed by <%= post.removed_by&.name || "Unknown" %>
                 on <%= post.removed_at.strftime("%b %-d, %Y %H:%M") %>
               </div>
@@ -102,27 +102,27 @@
 
   <% when "replies" %>
     <% if @items.empty? %>
-      <p class="px-5 py-8 text-sm text-gray-500 text-center">No replies.</p>
+      <p class="px-5 py-8 text-sm text-gray-500 dark:text-stone-400 text-center">No replies.</p>
     <% else %>
-      <ul class="divide-y divide-stone-100">
+      <ul class="divide-y divide-stone-100 dark:divide-stone-700">
         <% @items.each do |reply| %>
           <li class="px-5 py-4 <%= 'opacity-60' if reply.removed? %>">
             <div class="flex items-start justify-between gap-4">
               <div class="flex-1 min-w-0">
-                <div class="text-xs text-gray-400 mb-1">
-                  on <%= link_to reply.post.title, post_path(reply.post), class: "text-teal-700 hover:underline", target: "_blank" %>
+                <div class="text-xs text-gray-400 dark:text-stone-500 mb-1">
+                  on <%= link_to reply.post.title, post_path(reply.post), class: "text-teal-700 dark:text-teal-400 hover:underline", target: "_blank", rel: "noopener noreferrer" %>
                 </div>
                 <% if reply.removed? %>
                   <span class="inline-flex px-1.5 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700 mr-1">Removed</span>
                 <% end %>
-                <span class="text-sm <%= reply.removed? ? 'text-gray-400' : 'text-gray-800' %>">
+                <span class="text-sm <%= reply.removed? ? 'text-gray-400 dark:text-stone-500' : 'text-gray-800 dark:text-stone-200' %>">
                   <%= truncate(reply.body, length: 120) %>
                 </span>
               </div>
-              <span class="text-xs text-gray-400 shrink-0"><%= reply.created_at.strftime("%b %-d, %Y") %></span>
+              <span class="text-xs text-gray-400 dark:text-stone-500 shrink-0"><%= reply.created_at.strftime("%b %-d, %Y") %></span>
             </div>
             <% if reply.removed? %>
-              <div class="text-xs text-gray-400 mt-1">
+              <div class="text-xs text-gray-400 dark:text-stone-500 mt-1">
                 Removed by <%= reply.removed_by&.name || "Unknown" %>
                 on <%= reply.removed_at.strftime("%b %-d, %Y %H:%M") %>
               </div>
@@ -134,23 +134,23 @@
 
   <% when "bans" %>
     <% if @items.empty? %>
-      <p class="px-5 py-8 text-sm text-gray-500 text-center">No bans.</p>
+      <p class="px-5 py-8 text-sm text-gray-500 dark:text-stone-400 text-center">No bans.</p>
     <% else %>
-      <ul class="divide-y divide-stone-100">
+      <ul class="divide-y divide-stone-100 dark:divide-stone-700">
         <% @items.each do |ban| %>
           <% hours = ((ban.banned_until - ban.banned_from) / 3600).round %>
           <li class="px-5 py-4">
             <div class="flex items-start justify-between gap-4">
               <div>
-                <span class="font-medium text-gray-800"><%= ban.ban_reason.name %></span>
-                <span class="text-gray-500 ml-2">(<%= hours %> hour<%= hours == 1 ? "" : "s" %>)</span>
+                <span class="font-medium text-gray-800 dark:text-stone-200"><%= ban.ban_reason.name %></span>
+                <span class="text-gray-500 dark:text-stone-400 ml-2">(<%= hours %> hour<%= hours == 1 ? "" : "s" %>)</span>
               </div>
-              <span class="text-xs text-gray-400 shrink-0"><%= ban.banned_from.strftime("%b %-d, %Y %H:%M") %></span>
+              <span class="text-xs text-gray-400 dark:text-stone-500 shrink-0"><%= ban.banned_from.strftime("%b %-d, %Y %H:%M") %></span>
             </div>
-            <div class="text-xs text-gray-500 mt-1">
+            <div class="text-xs text-gray-500 dark:text-stone-400 mt-1">
               Issued by
               <% if ban.banned_by %>
-                <%= link_to ban.banned_by.name, admin_user_path(ban.banned_by), class: "text-teal-700 hover:underline" %>
+                <%= link_to ban.banned_by.name, admin_user_path(ban.banned_by), class: "text-teal-700 dark:text-teal-400 hover:underline" %>
               <% else %>
                 Unknown
               <% end %>
@@ -161,20 +161,20 @@
     <% end %>
 
   <% when "activity" %>
-    <div class="px-5 py-4 border-b border-stone-100">
-      <h3 class="text-sm font-semibold text-gray-700 mb-3">Bans Issued</h3>
+    <div class="px-5 py-4 border-b border-stone-100 dark:border-stone-700">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-stone-300 mb-3">Bans Issued</h3>
       <% if @bans_issued.empty? %>
-        <p class="text-sm text-gray-400">None.</p>
+        <p class="text-sm text-gray-400 dark:text-stone-500">None.</p>
       <% else %>
         <ul class="space-y-2">
           <% @bans_issued.each do |ban| %>
             <% hours = ((ban.banned_until - ban.banned_from) / 3600).round %>
-            <li class="text-sm">
+            <li class="text-sm text-gray-700 dark:text-stone-300">
               Banned
-              <%= link_to ban.user.name, admin_user_path(ban.user), class: "font-medium text-teal-700 hover:underline" %>
+              <%= link_to ban.user.name, admin_user_path(ban.user), class: "font-medium text-teal-700 dark:text-teal-400 hover:underline" %>
               for <%= hours %> hour<%= hours == 1 ? "" : "s" %>
               (<%= ban.ban_reason.name %>)
-              <span class="text-gray-400 ml-1"><%= ban.banned_from.strftime("%b %-d, %Y") %></span>
+              <span class="text-gray-400 dark:text-stone-500 ml-1"><%= ban.banned_from.strftime("%b %-d, %Y") %></span>
             </li>
           <% end %>
         </ul>
@@ -185,19 +185,19 @@
                               bans_page: @bans_page + 1,
                               posts_page: @posts_page,
                               replies_page: @replies_page),
-              class: "text-sm text-blue-600 hover:underline" %>
+              class: "text-sm text-blue-600 dark:text-blue-400 hover:underline" %>
       <% end %>
     </div>
-    <div class="px-5 py-4 border-b border-stone-100">
-      <h3 class="text-sm font-semibold text-gray-700 mb-3">Posts Removed</h3>
+    <div class="px-5 py-4 border-b border-stone-100 dark:border-stone-700">
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-stone-300 mb-3">Posts Removed</h3>
       <% if @posts_removed.empty? %>
-        <p class="text-sm text-gray-400">None.</p>
+        <p class="text-sm text-gray-400 dark:text-stone-500">None.</p>
       <% else %>
         <ul class="space-y-2">
           <% @posts_removed.each do |p| %>
-            <li class="text-sm">
+            <li class="text-sm text-gray-700 dark:text-stone-300">
               <span class="font-medium"><%= p.title %></span>
-              <span class="text-gray-400 ml-1">(<%= p.removed_at.strftime("%b %-d, %Y") %>)</span>
+              <span class="text-gray-400 dark:text-stone-500 ml-1">(<%= p.removed_at.strftime("%b %-d, %Y") %>)</span>
             </li>
           <% end %>
         </ul>
@@ -208,20 +208,20 @@
                               bans_page: @bans_page,
                               posts_page: @posts_page + 1,
                               replies_page: @replies_page),
-              class: "text-sm text-blue-600 hover:underline" %>
+              class: "text-sm text-blue-600 dark:text-blue-400 hover:underline" %>
       <% end %>
     </div>
     <div class="px-5 py-4">
-      <h3 class="text-sm font-semibold text-gray-700 mb-3">Replies Removed</h3>
+      <h3 class="text-sm font-semibold text-gray-700 dark:text-stone-300 mb-3">Replies Removed</h3>
       <% if @replies_removed.empty? %>
-        <p class="text-sm text-gray-400">None.</p>
+        <p class="text-sm text-gray-400 dark:text-stone-500">None.</p>
       <% else %>
         <ul class="space-y-2">
           <% @replies_removed.each do |r| %>
-            <li class="text-sm">
+            <li class="text-sm text-gray-700 dark:text-stone-300">
               Reply on
-              <%= link_to r.post.title, post_path(r.post), class: "text-teal-700 hover:underline", target: "_blank" %>
-              <span class="text-gray-400 ml-1">(<%= r.removed_at.strftime("%b %-d, %Y") %>)</span>
+              <%= link_to r.post.title, post_path(r.post), class: "text-teal-700 dark:text-teal-400 hover:underline", target: "_blank", rel: "noopener noreferrer" %>
+              <span class="text-gray-400 dark:text-stone-500 ml-1">(<%= r.removed_at.strftime("%b %-d, %Y") %>)</span>
             </li>
           <% end %>
         </ul>
@@ -232,7 +232,7 @@
                               bans_page: @bans_page,
                               posts_page: @posts_page,
                               replies_page: @replies_page + 1),
-              class: "text-sm text-blue-600 hover:underline" %>
+              class: "text-sm text-blue-600 dark:text-blue-400 hover:underline" %>
       <% end %>
     </div>
   <% end %>
@@ -240,17 +240,17 @@
 
 <%# Pagination %>
 <% if %w[posts replies bans].include?(@tab) %>
-  <div class="flex justify-between items-center mt-4 text-sm text-gray-600">
+  <div class="flex justify-between items-center mt-4 text-sm text-gray-600 dark:text-stone-400">
     <% if @page > 1 %>
       <%= link_to "← Previous", admin_user_path(@user, tab: @tab, page: @page - 1),
-            class: "px-4 py-2 bg-white border border-stone-300 rounded-lg hover:bg-stone-50" %>
+            class: "px-4 py-2 bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-600 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-700 dark:text-stone-300" %>
     <% else %>
       <span></span>
     <% end %>
     <span>Page <%= @page %></span>
     <% if @has_more %>
       <%= link_to "Next →", admin_user_path(@user, tab: @tab, page: @page + 1),
-            class: "px-4 py-2 bg-white border border-stone-300 rounded-lg hover:bg-stone-50" %>
+            class: "px-4 py-2 bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-600 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-700 dark:text-stone-300" %>
     <% else %>
       <span></span>
     <% end %>

@@ -1,9 +1,9 @@
 class Admin::DashboardController < Admin::BaseController
   def index
-    @total_users   = User.count
-    @total_posts   = Post.count
-    @total_replies = Reply.count
-    @banned_users  = UserBan.where("banned_until >= ?", Time.current).count
+    @total_users         = Rails.cache.fetch("admin/total_users",   expires_in: 5.minutes) { User.count }
+    @total_posts         = Rails.cache.fetch("admin/total_posts",   expires_in: 5.minutes) { Post.count }
+    @total_replies       = Rails.cache.fetch("admin/total_replies", expires_in: 5.minutes) { Reply.count }
+    @banned_users        = UserBan.where("banned_until >= ?", Time.current).count
     @pending_flags_count = Flag.pending.count
 
     bans = UserBan.includes(:banned_by, :user, :ban_reason)

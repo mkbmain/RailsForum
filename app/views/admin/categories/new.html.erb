@@ -2,9 +2,9 @@
 <% content_for :title, "New Category – Admin Panel" %>
 
 <div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-bold text-gray-900">New Category</h1>
+  <h1 class="text-2xl font-bold text-gray-900 dark:text-stone-100">New Category</h1>
 </div>
 
-<div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6 max-w-lg">
+<div class="bg-white dark:bg-stone-800 rounded-xl shadow-sm border border-stone-200 dark:border-stone-700 p-6 max-w-lg">
   <%= render "form", category: @category %>
 </div>

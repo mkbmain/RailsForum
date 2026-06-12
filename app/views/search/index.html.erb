@@ -50,7 +50,7 @@
                 <%= link_to post.title, post_path(post), class: "text-stone-900 dark:text-stone-100 hover:text-teal-700 dark:hover:text-teal-400" %>
               </h2>
               <p class="text-sm text-stone-500 dark:text-stone-400 line-clamp-2 mt-1">
-                <%= truncate(strip_tags(post.body), length: 200) %>
+                <%= truncate(strip_tags(render_markdown(post.body)), length: 200) %>
               </p>
               <div class="flex items-center gap-2 mt-3 pt-3 border-t border-stone-100 dark:border-stone-700">
                 <span class="text-sm font-medium text-stone-700 dark:text-stone-300"><%= post.user.name %></span>

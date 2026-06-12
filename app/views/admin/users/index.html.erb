@@ -2,49 +2,49 @@
 <% content_for :title, "Users – Admin Panel" %>
 
 <div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-bold text-gray-900">Users</h1>
+  <h1 class="text-2xl font-bold text-gray-900 dark:text-stone-100">Users</h1>
   <%= form_with url: admin_users_path, method: :get, class: "flex gap-2" do |f| %>
     <%= f.text_field :q, value: @q, placeholder: "Search by name or email…",
-          class: "px-3 py-2 rounded-lg border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 w-64" %>
+          class: "px-3 py-2 rounded-lg border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400 w-64" %>
     <%= f.submit "Search",
           class: "bg-teal-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-600 cursor-pointer" %>
     <% if @q.present? %>
-      <%= link_to "Clear", admin_users_path, class: "text-sm text-gray-500 hover:text-gray-700 px-2 py-2" %>
+      <%= link_to "Clear", admin_users_path, class: "text-sm text-gray-500 dark:text-stone-400 hover:text-gray-700 dark:hover:text-stone-200 px-2 py-2" %>
     <% end %>
   <% end %>
 </div>
 
-<div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+<div class="bg-white dark:bg-stone-800 rounded-xl shadow-sm border border-stone-200 dark:border-stone-700 overflow-hidden">
   <table class="w-full text-sm">
-    <thead class="bg-stone-50 border-b border-stone-200">
+    <thead class="bg-stone-50 dark:bg-stone-700 border-b border-stone-200 dark:border-stone-600">
       <tr>
-        <th class="text-left px-4 py-3 font-medium text-gray-600">Name</th>
-        <th class="text-left px-4 py-3 font-medium text-gray-600">Email</th>
-        <th class="text-left px-4 py-3 font-medium text-gray-600">Role</th>
-        <th class="text-left px-4 py-3 font-medium text-gray-600">Joined</th>
-        <th class="text-right px-4 py-3 font-medium text-gray-600">Posts</th>
-        <th class="text-left px-4 py-3 font-medium text-gray-600">Ban Status</th>
+        <th class="text-left px-4 py-3 font-medium text-gray-600 dark:text-stone-300">Name</th>
+        <th class="text-left px-4 py-3 font-medium text-gray-600 dark:text-stone-300">Email</th>
+        <th class="text-left px-4 py-3 font-medium text-gray-600 dark:text-stone-300">Role</th>
+        <th class="text-left px-4 py-3 font-medium text-gray-600 dark:text-stone-300">Joined</th>
+        <th class="text-right px-4 py-3 font-medium text-gray-600 dark:text-stone-300">Posts</th>
+        <th class="text-left px-4 py-3 font-medium text-gray-600 dark:text-stone-300">Ban Status</th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-stone-100">
+    <tbody class="divide-y divide-stone-100 dark:divide-stone-700">
       <% @users.each do |user| %>
         <% active_ban = user.user_bans.find { |b| b.banned_until >= Time.current } %>
-        <tr class="hover:bg-stone-50">
+        <tr class="hover:bg-stone-50 dark:hover:bg-stone-700">
           <td class="px-4 py-3">
-            <%= link_to user.name, admin_user_path(user), class: "font-medium text-teal-700 hover:underline" %>
+            <%= link_to user.name, admin_user_path(user), class: "font-medium text-teal-700 dark:text-teal-400 hover:underline" %>
           </td>
-          <td class="px-4 py-3 text-gray-600"><%= user.email %></td>
+          <td class="px-4 py-3 text-gray-600 dark:text-stone-400"><%= user.email %></td>
           <td class="px-4 py-3">
             <% if user.admin? %>
               <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-800">Admin</span>
             <% elsif user.sub_admin? %>
               <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">Sub-admin</span>
             <% else %>
-              <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-stone-100 text-stone-600">Creator</span>
+              <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold bg-stone-100 dark:bg-stone-600 text-stone-600 dark:text-stone-300">Creator</span>
             <% end %>
           </td>
-          <td class="px-4 py-3 text-gray-500"><%= user.created_at.strftime("%b %-d, %Y") %></td>
-          <td class="px-4 py-3 text-right text-gray-700"><%= @post_counts[user.id].to_i %></td>
+          <td class="px-4 py-3 text-gray-500 dark:text-stone-400"><%= user.created_at.strftime("%b %-d, %Y") %></td>
+          <td class="px-4 py-3 text-right text-gray-700 dark:text-stone-300"><%= @post_counts[user.id].to_i %></td>
           <td class="px-4 py-3">
             <% if active_ban %>
               <span class="text-red-600 font-medium text-xs">
@@ -56,24 +56,24 @@
       <% end %>
       <% if @users.empty? %>
         <tr>
-          <td colspan="6" class="px-4 py-8 text-center text-gray-500">No users found.</td>
+          <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-stone-400">No users found.</td>
         </tr>
       <% end %>
     </tbody>
   </table>
 </div>
 
-<div class="flex justify-between items-center mt-4 text-sm text-gray-600">
+<div class="flex justify-between items-center mt-4 text-sm text-gray-600 dark:text-stone-400">
   <% if @page > 1 %>
     <%= link_to "← Previous", admin_users_path(q: @q, page: @page - 1),
-          class: "px-4 py-2 bg-white border border-stone-300 rounded-lg hover:bg-stone-50" %>
+          class: "px-4 py-2 bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-600 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-700 dark:text-stone-300" %>
   <% else %>
     <span></span>
   <% end %>
   <span>Page <%= @page %></span>
   <% if @has_more %>
     <%= link_to "Next →", admin_users_path(q: @q, page: @page + 1),
-          class: "px-4 py-2 bg-white border border-stone-300 rounded-lg hover:bg-stone-50" %>
+          class: "px-4 py-2 bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-600 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-700 dark:text-stone-300" %>
   <% else %>
     <span></span>
   <% end %>
