@@ -16,12 +16,18 @@
     <%= f.submit "Log In", class: "w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 font-medium" %>
   <% end %>
 
-  <div class="mt-4 space-y-2">
-    <%= button_to "Sign in with Google", "/auth/google_oauth2",
-          class: "w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 font-medium" %>
-    <%= button_to "Sign in with Microsoft", "/auth/microsoft_graph",
-          class: "w-full bg-blue-800 text-white py-2 px-4 rounded-md hover:bg-blue-900 font-medium" %>
-  </div>
+  <% if google_oauth_configured? || microsoft_oauth_configured? %>
+    <div class="mt-4 space-y-2">
+      <% if google_oauth_configured? %>
+        <%= button_to "Sign in with Google", "/auth/google_oauth2",
+              class: "w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 font-medium" %>
+      <% end %>
+      <% if microsoft_oauth_configured? %>
+        <%= button_to "Sign in with Microsoft", "/auth/microsoft_graph",
+              class: "w-full bg-blue-800 text-white py-2 px-4 rounded-md hover:bg-blue-900 font-medium" %>
+      <% end %>
+    </div>
+  <% end %>
 
   <p class="mt-4 text-center text-sm text-gray-600 dark:text-stone-400">
     No account? <%= link_to "Sign up", signup_path, class: "text-blue-600 hover:underline" %>
