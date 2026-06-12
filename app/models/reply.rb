@@ -30,6 +30,6 @@ class Reply < ApplicationRecord
   end
 
   def recalculate_post_last_replied_at
-    post.update_column(:last_replied_at, post.replies.maximum(:created_at))
+    post.update_column(:last_replied_at, post.replies.visible.maximum(:created_at))
   end
 end

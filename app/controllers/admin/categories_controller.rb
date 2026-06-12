@@ -3,7 +3,7 @@ class Admin::CategoriesController < Admin::BaseController
   before_action :set_category, only: [ :edit, :update, :destroy, :move_up, :move_down ]
 
   def index
-    @categories  = Category.all
+    @categories  = Category.ordered
     @post_counts = Post.group(:category_id).count
   end
 
@@ -13,8 +13,8 @@ class Admin::CategoriesController < Admin::BaseController
 
   def create
     @category = Category.new(category_params)
-    @category.id       = Category.unscoped.maximum(:id).to_i + 1
-    @category.position = Category.unscoped.maximum(:position).to_i + 1
+    @category.id       = Category.maximum(:id).to_i + 1
+    @category.position = Category.maximum(:position).to_i + 1
     if @category.save
       redirect_to admin_categories_path, notice: "Category created."
     else
@@ -42,7 +42,7 @@ class Admin::CategoriesController < Admin::BaseController
   end
 
   def move_up
-    prev_cat = Category.unscoped.where("position < ?", @category.position).order(position: :desc).first
+    prev_cat = Category.where("position < ?", @category.position).order(position: :desc).first
     if prev_cat
       ActiveRecord::Base.transaction do
         pos = @category.position
@@ -56,7 +56,7 @@ class Admin::CategoriesController < Admin::BaseController
   end
 
   def move_down
-    next_cat = Category.unscoped.where("position > ?", @category.position).order(position: :asc).first
+    next_cat = Category.where("position > ?", @category.position).order(position: :asc).first
     if next_cat
       ActiveRecord::Base.transaction do
         pos = @category.position
@@ -72,7 +72,7 @@ class Admin::CategoriesController < Admin::BaseController
   private
 
   def set_category
-    @category = Category.unscoped.find(params[:id])
+    @category = Category.find(params[:id])
   end
 
   def category_params

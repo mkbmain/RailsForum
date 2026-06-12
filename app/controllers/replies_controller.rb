@@ -49,7 +49,7 @@ class RepliesController < ApplicationController
       return
     end
     @reply.update!(removed_at: nil, removed_by: nil)
-    @post.update_column(:last_replied_at, @post.replies.visible.maximum(:created_at))
+    recalculate_last_replied_at
     broadcast_reply_restored
     redirect_to @post, notice: "Reply restored."
   end
@@ -57,14 +57,14 @@ class RepliesController < ApplicationController
   def destroy
     if current_user.moderator? && can_moderate?(@reply.user)
       @reply.update!(removed_at: Time.current, removed_by: current_user)
-      @post.update_column(:last_replied_at, @post.replies.visible.maximum(:created_at))
+      recalculate_last_replied_at
       NotificationService.content_removed(@reply, removed_by: current_user)
       broadcast_reply_soft_deleted
       redirect_to @post, notice: "Reply removed."
     elsif @reply.user == current_user
       return redirect_to @post, notice: "Reply already removed." if @reply.removed?
       @reply.update!(removed_at: Time.current, removed_by: current_user)
-      @post.update_column(:last_replied_at, @post.replies.visible.maximum(:created_at))
+      recalculate_last_replied_at
       broadcast_reply_soft_deleted
       redirect_to @post, notice: "Reply deleted."
     else
@@ -114,8 +114,12 @@ class RepliesController < ApplicationController
     post_path(params[:post_id])
   end
 
+  def recalculate_last_replied_at
+    @post.update_column(:last_replied_at, @post.replies.visible.maximum(:created_at))
+  end
+
   def broadcast_reply_created
-    Turbo::StreamsChannel.broadcast_append_to(
+    Turbo::StreamsChannel.broadcast_append_later_to(
       [ @post, :replies ],
       target: "replies-list-#{@post.id}",
       partial: "replies/reply",
@@ -127,7 +131,7 @@ class RepliesController < ApplicationController
   def broadcast_reply_updated
     # flagged_reply_ids cannot be per-subscriber with server-sent Turbo Streams,
     # so viewers who flagged this reply will see the flag button reset until they reload.
-    Turbo::StreamsChannel.broadcast_replace_to(
+    Turbo::StreamsChannel.broadcast_replace_later_to(
       [ @post, :replies ],
       target: "reply-#{@reply.id}",
       partial: "replies/reply",
@@ -136,7 +140,7 @@ class RepliesController < ApplicationController
   end
 
   def broadcast_reply_soft_deleted
-    Turbo::StreamsChannel.broadcast_replace_to(
+    Turbo::StreamsChannel.broadcast_replace_later_to(
       [ @post, :replies ],
       target: "reply-#{@reply.id}",
       partial: "replies/reply",
@@ -146,7 +150,7 @@ class RepliesController < ApplicationController
   end
 
   def broadcast_reply_restored
-    Turbo::StreamsChannel.broadcast_replace_to(
+    Turbo::StreamsChannel.broadcast_replace_later_to(
       [ @post, :replies ],
       target: "reply-#{@reply.id}",
       partial: "replies/reply",
@@ -156,7 +160,7 @@ class RepliesController < ApplicationController
   end
 
   def broadcast_reply_count
-    Turbo::StreamsChannel.broadcast_replace_to(
+    Turbo::StreamsChannel.broadcast_replace_later_to(
       [ @post, :replies ],
       target: "replies_count_#{@post.id}",
       partial: "replies/count",
