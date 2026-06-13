@@ -39,10 +39,13 @@
         </div>
         <%= f.text_area :body, rows: 8, maxlength: 1000,
               class: "block w-full border border-gray-300 dark:border-stone-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-100",
-              data: { markdown_preview_target: "textarea" } %>
+              data: { markdown_preview_target: "textarea", action: "input->markdown-preview#updateCounter" } %>
         <div data-markdown-preview-target="preview"
              class="hidden w-full border border-gray-300 dark:border-stone-600 rounded-md px-3 py-2 text-gray-800 dark:text-stone-200 prose prose-sm max-w-none"></div>
-        <p class="text-xs text-gray-400 dark:text-stone-500 mt-1">Markdown supported — **bold**, _italic_, `code`, fenced code blocks · 1000 character limit</p>
+        <div class="flex justify-between mt-1">
+          <p class="text-xs text-gray-400 dark:text-stone-500">Markdown supported — **bold**, _italic_, `code`, fenced code blocks</p>
+          <p class="text-xs text-gray-400 dark:text-stone-500" data-markdown-preview-target="counter"></p>
+        </div>
       </div>
     </div>
     <%= f.submit "Update Post", class: "bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 font-medium" %>

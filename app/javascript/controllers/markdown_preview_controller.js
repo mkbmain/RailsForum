@@ -5,7 +5,25 @@ const ACTIVE_TAB   = "px-4 py-2 text-sm font-medium text-blue-600 border-b-2 bor
 const INACTIVE_TAB = "px-4 py-2 text-sm text-gray-500 hover:text-gray-700 dark:text-stone-400 dark:hover:text-stone-200"
 
 export default class extends Controller {
-  static targets = ["textarea", "preview", "writeTab", "previewTab"]
+  static targets = ["textarea", "preview", "writeTab", "previewTab", "counter"]
+
+  connect() {
+    this.updateCounter()
+  }
+
+  updateCounter() {
+    if (!this.hasCounterTarget) return
+    const max = parseInt(this.textareaTarget.getAttribute("maxlength") || 1000)
+    const remaining = max - this.textareaTarget.value.length
+    this.counterTarget.textContent = `${remaining} characters remaining`
+    if (remaining <= 100) {
+      this.counterTarget.classList.add("text-red-500", "dark:text-red-400")
+      this.counterTarget.classList.remove("text-gray-400", "dark:text-stone-500")
+    } else {
+      this.counterTarget.classList.remove("text-red-500", "dark:text-red-400")
+      this.counterTarget.classList.add("text-gray-400", "dark:text-stone-500")
+    }
+  }
 
   showWrite() {
     this.textareaTarget.classList.remove("hidden")
