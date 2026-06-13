@@ -1,6 +1,12 @@
 <%# app/views/posts/show.html.erb %>
 <div class="max-w-3xl mx-auto mt-8 px-4">
-  <%= link_to "← Back to Forum", posts_path, class: "text-blue-600 hover:underline text-sm" %>
+  <nav aria-label="Breadcrumb" class="text-sm text-stone-500 dark:text-stone-400 mb-4 flex items-center gap-1.5 flex-wrap">
+    <%= link_to "Forum", root_path, class: "hover:underline shrink-0" %>
+    <span aria-hidden="true" class="shrink-0">/</span>
+    <%= link_to @post.category.name, posts_path(category: @post.category_id), class: "hover:underline shrink-0" %>
+    <span aria-hidden="true" class="shrink-0">/</span>
+    <span class="text-stone-700 dark:text-stone-300" aria-current="page"><%= truncate(@post.title, length: 60) %></span>
+  </nav>
 
   <div class="bg-white dark:bg-stone-800 border border-gray-200 dark:border-stone-700 rounded-lg p-6 mt-4">
     <h1 class="text-2xl font-bold dark:text-stone-100"><%= @post.title %></h1>
