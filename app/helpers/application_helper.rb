@@ -24,4 +24,10 @@ module ApplicationHelper
       protocols: { "a" => { "href" => [ "http", "https", "mailto", :relative ] } }
     )
   end
+
+  def plain_text_excerpt(text, length: 160)
+    html  = render_markdown(text.to_s)
+    plain = CGI.unescapeHTML(ActionView::Base.full_sanitizer.sanitize(html).squish)
+    truncate(plain, length: length, omission: "…")
+  end
 end

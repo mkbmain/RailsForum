@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><%= content_for(:title).presence || "Forum" %></title>
+    <meta property="og:site_name" content="Forum">
+    <meta property="og:title" content="<%= content_for(:og_title).presence || content_for(:title).presence || "Forum" %>">
+    <meta property="og:description" content="<%= content_for(:og_description).presence || "A modern internet forum." %>">
+    <meta property="og:type" content="<%= content_for(:og_type).presence || "website" %>">
+    <meta property="og:url" content="<%= request.base_url + request.path %>">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <script nonce="<%= content_security_policy_nonce %>">

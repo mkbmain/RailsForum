@@ -1,4 +1,8 @@
 <%# app/views/posts/show.html.erb %>
+<% content_for :title, "#{@post.title} – Forum" %>
+<% content_for :og_title, @post.title %>
+<% content_for :og_description, plain_text_excerpt(@post.body, length: 160) %>
+<% content_for :og_type, "article" %>
 <div class="max-w-3xl mx-auto mt-8 px-4">
   <nav aria-label="Breadcrumb" class="text-sm text-stone-500 dark:text-stone-400 mb-4 flex items-center gap-1.5 flex-wrap">
     <%= link_to "Forum", root_path, class: "hover:underline shrink-0" %>
